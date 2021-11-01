@@ -1,0 +1,2773 @@
+
+Terraform used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+  [32m+[0m create
+ [36m<=[0m read (data resources)
+[0m
+Terraform will perform the following actions:
+
+[1m  # data.aws_eks_cluster.cluster[0m will be read during apply
+  # (config refers to values not yet known)[0m[0m
+[0m [36m<=[0m[0m data "aws_eks_cluster" "cluster"  {
+      [32m+[0m [0m[1m[0marn[0m[0m                       = (known after apply)
+      [32m+[0m [0m[1m[0mcertificate_authority[0m[0m     = (known after apply)
+      [32m+[0m [0m[1m[0mcreated_at[0m[0m                = (known after apply)
+      [32m+[0m [0m[1m[0menabled_cluster_log_types[0m[0m = (known after apply)
+      [32m+[0m [0m[1m[0mendpoint[0m[0m                  = (known after apply)
+      [32m+[0m [0m[1m[0mid[0m[0m                        = (known after apply)
+      [32m+[0m [0m[1m[0midentity[0m[0m                  = (known after apply)
+      [32m+[0m [0m[1m[0mkubernetes_network_config[0m[0m = (known after apply)
+      [32m+[0m [0m[1m[0mname[0m[0m                      = (known after apply)
+      [32m+[0m [0m[1m[0mplatform_version[0m[0m          = (known after apply)
+      [32m+[0m [0m[1m[0mrole_arn[0m[0m                  = (known after apply)
+      [32m+[0m [0m[1m[0mstatus[0m[0m                    = (known after apply)
+      [32m+[0m [0m[1m[0mtags[0m[0m                      = (known after apply)
+      [32m+[0m [0m[1m[0mversion[0m[0m                   = (known after apply)
+      [32m+[0m [0m[1m[0mvpc_config[0m[0m                = (known after apply)
+    }
+
+[1m  # data.aws_eks_cluster_auth.cluster[0m will be read during apply
+  # (config refers to values not yet known)[0m[0m
+[0m [36m<=[0m[0m data "aws_eks_cluster_auth" "cluster"  {
+      [32m+[0m [0m[1m[0mid[0m[0m    = (known after apply)
+      [32m+[0m [0m[1m[0mname[0m[0m  = (known after apply)
+      [32m+[0m [0m[1m[0mtoken[0m[0m = (sensitive value)
+    }
+
+[1m  # data.template_cloudinit_config.jump[0][0m will be read during apply
+  # (config refers to values not yet known)[0m[0m
+[0m [36m<=[0m[0m data "template_cloudinit_config" "jump"  {
+      [32m+[0m [0m[1m[0mbase64_encode[0m[0m = true
+      [32m+[0m [0m[1m[0mgzip[0m[0m          = true
+      [32m+[0m [0m[1m[0mid[0m[0m            = (known after apply)
+      [32m+[0m [0m[1m[0mrendered[0m[0m      = (known after apply)
+
+      [32m+[0m [0mpart {
+          [32m+[0m [0m[1m[0mcontent[0m[0m      = (known after apply)
+          [32m+[0m [0m[1m[0mcontent_type[0m[0m = "text/cloud-config"
+        }
+    }
+
+[1m  # data.template_file.jump-cloudconfig[0][0m will be read during apply
+  # (config refers to values not yet known)[0m[0m
+[0m [36m<=[0m[0m data "template_file" "jump-cloudconfig"  {
+      [32m+[0m [0m[1m[0mid[0m[0m       = (known after apply)
+      [32m+[0m [0m[1m[0mrendered[0m[0m = (known after apply)
+      [32m+[0m [0m[1m[0mtemplate[0m[0m = <<-EOT
+            #cloud-config
+            system_info:
+              default_user:
+                name: ${vm_admin}
+            
+            #
+            # First we'll update the repo and then update the OS.
+            #
+            package_update: true
+            package_upgrade: true
+            
+            #
+            # Install packages
+            #
+            packages:
+              - nfs-common
+            
+            #
+            # Update /etc/fstab
+            #
+            mounts:
+              - ${mounts}
+            
+            #
+            # Add nfs mounts
+            #
+            runcmd:
+              - if ! [ -z "${rwx_filestore_endpoint}" ]
+              - then
+                  #
+                  # mount the nfs
+                  #
+              -   while [ `df -h | grep "${rwx_filestore_endpoint}:${rwx_filestore_path}" | wc -l` -eq 0 ]; do sleep 5 && mount -a ; done
+                  #
+                  # Change permissions and owener
+                  #
+              -   mkdir -p ${jump_rwx_filestore_path}/pvs
+              -   chmod 777 ${jump_rwx_filestore_path} -R
+              -   chown -R nobody:nogroup ${jump_rwx_filestore_path}
+              - fi
+        EOT
+      [32m+[0m [0m[1m[0mvars[0m[0m     = {
+          [32m+[0m [0m"jump_rwx_filestore_path" = "/viya-share"
+          [32m+[0m [0m"mounts"                  = (known after apply)
+          [32m+[0m [0m"rwx_filestore_endpoint"  = (known after apply)
+          [32m+[0m [0m"rwx_filestore_path"      = "/export"
+          [32m+[0m [0m"vm_admin"                = "jumpuser"
+        }
+    }
+
+[1m  # aws_resourcegroups_group.aws_rg[0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_resourcegroups_group" "aws_rg" {
+      [32m+[0m [0m[1m[0marn[0m[0m      = (known after apply)
+      [32m+[0m [0m[1m[0mid[0m[0m       = (known after apply)
+      [32m+[0m [0m[1m[0mname[0m[0m     = "viya-rg"
+      [32m+[0m [0m[1m[0mtags_all[0m[0m = (known after apply)
+
+      [32m+[0m [0mresource_query {
+          [32m+[0m [0m[1m[0mquery[0m[0m = jsonencode(
+                {
+                  [32m+[0m [0mResourceTypeFilters = [
+                      [32m+[0m [0m"AWS::AllSupported",
+                    ]
+                  [32m+[0m [0mTagFilters          = [
+                      [32m+[0m [0m{
+                          [32m+[0m [0mKey    = "customer"
+                          [32m+[0m [0mValues = [
+                              [32m+[0m [0m"bnl",
+                            ]
+                        },
+                      [32m+[0m [0m{
+                          [32m+[0m [0mKey    = "environment"
+                          [32m+[0m [0mValues = [
+                              [32m+[0m [0m"development",
+                            ]
+                        },
+                      [32m+[0m [0m{
+                          [32m+[0m [0mKey    = "owner"
+                          [32m+[0m [0mValues = [
+                              [32m+[0m [0m"sysadmin",
+                            ]
+                        },
+                      [32m+[0m [0m{
+                          [32m+[0m [0mKey    = "project"
+                          [32m+[0m [0mValues = [
+                              [32m+[0m [0m"viya",
+                            ]
+                        },
+                    ]
+                }
+            )
+          [32m+[0m [0m[1m[0mtype[0m[0m  = "TAG_FILTERS_1_0"
+        }
+    }
+
+[1m  # aws_security_group.cluster_security_group[0][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_security_group" "cluster_security_group" {
+      [32m+[0m [0m[1m[0marn[0m[0m                    = (known after apply)
+      [32m+[0m [0m[1m[0mdescription[0m[0m            = "EKS cluster security group."
+      [32m+[0m [0m[1m[0megress[0m[0m                 = [
+          [32m+[0m [0m{
+              [32m+[0m [0mcidr_blocks      = [
+                  [32m+[0m [0m"0.0.0.0/0",
+                ]
+              [32m+[0m [0mdescription      = "Allow all outbound traffic."
+              [32m+[0m [0mfrom_port        = 0
+              [32m+[0m [0mipv6_cidr_blocks = []
+              [32m+[0m [0mprefix_list_ids  = []
+              [32m+[0m [0mprotocol         = "-1"
+              [32m+[0m [0msecurity_groups  = []
+              [32m+[0m [0mself             = false
+              [32m+[0m [0mto_port          = 0
+            },
+        ]
+      [32m+[0m [0m[1m[0mid[0m[0m                     = (known after apply)
+      [32m+[0m [0m[1m[0mingress[0m[0m                = (known after apply)
+      [32m+[0m [0m[1m[0mname[0m[0m                   = "viya-eks_cluster_sg"
+      [32m+[0m [0m[1m[0mname_prefix[0m[0m            = (known after apply)
+      [32m+[0m [0m[1m[0mowner_id[0m[0m               = (known after apply)
+      [32m+[0m [0m[1m[0mrevoke_rules_on_delete[0m[0m = false
+      [32m+[0m [0m[1m[0mtags[0m[0m                   = {
+          [32m+[0m [0m"Name"        = "viya-eks_cluster_sg"
+          [32m+[0m [0m"customer"    = "bnl"
+          [32m+[0m [0m"environment" = "development"
+          [32m+[0m [0m"owner"       = "sysadmin"
+          [32m+[0m [0m"project"     = "viya"
+        }
+      [32m+[0m [0m[1m[0mtags_all[0m[0m               = {
+          [32m+[0m [0m"Name"        = "viya-eks_cluster_sg"
+          [32m+[0m [0m"customer"    = "bnl"
+          [32m+[0m [0m"environment" = "development"
+          [32m+[0m [0m"owner"       = "sysadmin"
+          [32m+[0m [0m"project"     = "viya"
+        }
+      [32m+[0m [0m[1m[0mvpc_id[0m[0m                 = (known after apply)
+    }
+
+[1m  # aws_security_group.sg[0][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_security_group" "sg" {
+      [32m+[0m [0m[1m[0marn[0m[0m                    = (known after apply)
+      [32m+[0m [0m[1m[0mdescription[0m[0m            = "Managed by Terraform"
+      [32m+[0m [0m[1m[0megress[0m[0m                 = [
+          [32m+[0m [0m{
+              [32m+[0m [0mcidr_blocks      = [
+                  [32m+[0m [0m"0.0.0.0/0",
+                ]
+              [32m+[0m [0mdescription      = "Allow all outbound traffic."
+              [32m+[0m [0mfrom_port        = 0
+              [32m+[0m [0mipv6_cidr_blocks = []
+              [32m+[0m [0mprefix_list_ids  = []
+              [32m+[0m [0mprotocol         = "-1"
+              [32m+[0m [0msecurity_groups  = []
+              [32m+[0m [0mself             = false
+              [32m+[0m [0mto_port          = 0
+            },
+        ]
+      [32m+[0m [0m[1m[0mid[0m[0m                     = (known after apply)
+      [32m+[0m [0m[1m[0mingress[0m[0m                = (known after apply)
+      [32m+[0m [0m[1m[0mname[0m[0m                   = "viya-sg"
+      [32m+[0m [0m[1m[0mname_prefix[0m[0m            = (known after apply)
+      [32m+[0m [0m[1m[0mowner_id[0m[0m               = (known after apply)
+      [32m+[0m [0m[1m[0mrevoke_rules_on_delete[0m[0m = false
+      [32m+[0m [0m[1m[0mtags[0m[0m                   = {
+          [32m+[0m [0m"Name"        = "viya-sg"
+          [32m+[0m [0m"customer"    = "bnl"
+          [32m+[0m [0m"environment" = "development"
+          [32m+[0m [0m"owner"       = "sysadmin"
+          [32m+[0m [0m"project"     = "viya"
+        }
+      [32m+[0m [0m[1m[0mtags_all[0m[0m               = {
+          [32m+[0m [0m"Name"        = "viya-sg"
+          [32m+[0m [0m"customer"    = "bnl"
+          [32m+[0m [0m"environment" = "development"
+          [32m+[0m [0m"owner"       = "sysadmin"
+          [32m+[0m [0m"project"     = "viya"
+        }
+      [32m+[0m [0m[1m[0mvpc_id[0m[0m                 = (known after apply)
+    }
+
+[1m  # aws_security_group.workers_security_group[0][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_security_group" "workers_security_group" {
+      [32m+[0m [0m[1m[0marn[0m[0m                    = (known after apply)
+      [32m+[0m [0m[1m[0mdescription[0m[0m            = "Security group for all nodes in the cluster."
+      [32m+[0m [0m[1m[0megress[0m[0m                 = [
+          [32m+[0m [0m{
+              [32m+[0m [0mcidr_blocks      = [
+                  [32m+[0m [0m"0.0.0.0/0",
+                ]
+              [32m+[0m [0mdescription      = "Allow cluster egress access to the Internet."
+              [32m+[0m [0mfrom_port        = 0
+              [32m+[0m [0mipv6_cidr_blocks = []
+              [32m+[0m [0mprefix_list_ids  = []
+              [32m+[0m [0mprotocol         = "-1"
+              [32m+[0m [0msecurity_groups  = []
+              [32m+[0m [0mself             = false
+              [32m+[0m [0mto_port          = 0
+            },
+        ]
+      [32m+[0m [0m[1m[0mid[0m[0m                     = (known after apply)
+      [32m+[0m [0m[1m[0mingress[0m[0m                = (known after apply)
+      [32m+[0m [0m[1m[0mname[0m[0m                   = "viya-eks_worker_sg"
+      [32m+[0m [0m[1m[0mname_prefix[0m[0m            = (known after apply)
+      [32m+[0m [0m[1m[0mowner_id[0m[0m               = (known after apply)
+      [32m+[0m [0m[1m[0mrevoke_rules_on_delete[0m[0m = false
+      [32m+[0m [0m[1m[0mtags[0m[0m                   = {
+          [32m+[0m [0m"Name"                           = "viya-eks_worker_sg"
+          [32m+[0m [0m"customer"                       = "bnl"
+          [32m+[0m [0m"environment"                    = "development"
+          [32m+[0m [0m"kubernetes.io/cluster/viya-eks" = "owned"
+          [32m+[0m [0m"owner"                          = "sysadmin"
+          [32m+[0m [0m"project"                        = "viya"
+        }
+      [32m+[0m [0m[1m[0mtags_all[0m[0m               = {
+          [32m+[0m [0m"Name"                           = "viya-eks_worker_sg"
+          [32m+[0m [0m"customer"                       = "bnl"
+          [32m+[0m [0m"environment"                    = "development"
+          [32m+[0m [0m"kubernetes.io/cluster/viya-eks" = "owned"
+          [32m+[0m [0m"owner"                          = "sysadmin"
+          [32m+[0m [0m"project"                        = "viya"
+        }
+      [32m+[0m [0m[1m[0mvpc_id[0m[0m                 = (known after apply)
+    }
+
+[1m  # aws_security_group_rule.all[0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_security_group_rule" "all" {
+      [32m+[0m [0m[1m[0mdescription[0m[0m              = "Allow internal security group communication."
+      [32m+[0m [0m[1m[0mfrom_port[0m[0m                = 0
+      [32m+[0m [0m[1m[0mid[0m[0m                       = (known after apply)
+      [32m+[0m [0m[1m[0mprotocol[0m[0m                 = "-1"
+      [32m+[0m [0m[1m[0msecurity_group_id[0m[0m        = (known after apply)
+      [32m+[0m [0m[1m[0mself[0m[0m                     = true
+      [32m+[0m [0m[1m[0msource_security_group_id[0m[0m = (known after apply)
+      [32m+[0m [0m[1m[0mto_port[0m[0m                  = 0
+      [32m+[0m [0m[1m[0mtype[0m[0m                     = "ingress"
+    }
+
+[1m  # aws_security_group_rule.cluster_ingress[0][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_security_group_rule" "cluster_ingress" {
+      [32m+[0m [0m[1m[0mdescription[0m[0m              = "Allow pods to communicate with the EKS cluster API."
+      [32m+[0m [0m[1m[0mfrom_port[0m[0m                = 443
+      [32m+[0m [0m[1m[0mid[0m[0m                       = (known after apply)
+      [32m+[0m [0m[1m[0mprotocol[0m[0m                 = "tcp"
+      [32m+[0m [0m[1m[0msecurity_group_id[0m[0m        = (known after apply)
+      [32m+[0m [0m[1m[0mself[0m[0m                     = false
+      [32m+[0m [0m[1m[0msource_security_group_id[0m[0m = (known after apply)
+      [32m+[0m [0m[1m[0mto_port[0m[0m                  = 443
+      [32m+[0m [0m[1m[0mtype[0m[0m                     = "ingress"
+    }
+
+[1m  # aws_security_group_rule.postgres_internal["5432"][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_security_group_rule" "postgres_internal" {
+      [32m+[0m [0m[1m[0mdescription[0m[0m              = "Allow Postgres within network"
+      [32m+[0m [0m[1m[0mfrom_port[0m[0m                = 5432
+      [32m+[0m [0m[1m[0mid[0m[0m                       = (known after apply)
+      [32m+[0m [0m[1m[0mprotocol[0m[0m                 = "tcp"
+      [32m+[0m [0m[1m[0msecurity_group_id[0m[0m        = (known after apply)
+      [32m+[0m [0m[1m[0mself[0m[0m                     = true
+      [32m+[0m [0m[1m[0msource_security_group_id[0m[0m = (known after apply)
+      [32m+[0m [0m[1m[0mto_port[0m[0m                  = 5432
+      [32m+[0m [0m[1m[0mtype[0m[0m                     = "ingress"
+    }
+
+[1m  # aws_security_group_rule.worker_cluster_api[0][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_security_group_rule" "worker_cluster_api" {
+      [32m+[0m [0m[1m[0mdescription[0m[0m              = "Allow workers pods to receive communication from the cluster control plane."
+      [32m+[0m [0m[1m[0mfrom_port[0m[0m                = 1025
+      [32m+[0m [0m[1m[0mid[0m[0m                       = (known after apply)
+      [32m+[0m [0m[1m[0mprotocol[0m[0m                 = "tcp"
+      [32m+[0m [0m[1m[0msecurity_group_id[0m[0m        = (known after apply)
+      [32m+[0m [0m[1m[0mself[0m[0m                     = false
+      [32m+[0m [0m[1m[0msource_security_group_id[0m[0m = (known after apply)
+      [32m+[0m [0m[1m[0mto_port[0m[0m                  = 65535
+      [32m+[0m [0m[1m[0mtype[0m[0m                     = "ingress"
+    }
+
+[1m  # aws_security_group_rule.worker_cluster_api_443[0][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_security_group_rule" "worker_cluster_api_443" {
+      [32m+[0m [0m[1m[0mdescription[0m[0m              = "Allow pods running extension API servers on port 443 to receive communication from cluster control plane."
+      [32m+[0m [0m[1m[0mfrom_port[0m[0m                = 443
+      [32m+[0m [0m[1m[0mid[0m[0m                       = (known after apply)
+      [32m+[0m [0m[1m[0mprotocol[0m[0m                 = "tcp"
+      [32m+[0m [0m[1m[0msecurity_group_id[0m[0m        = (known after apply)
+      [32m+[0m [0m[1m[0mself[0m[0m                     = false
+      [32m+[0m [0m[1m[0msource_security_group_id[0m[0m = (known after apply)
+      [32m+[0m [0m[1m[0mto_port[0m[0m                  = 443
+      [32m+[0m [0m[1m[0mtype[0m[0m                     = "ingress"
+    }
+
+[1m  # aws_security_group_rule.worker_self[0][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_security_group_rule" "worker_self" {
+      [32m+[0m [0m[1m[0mdescription[0m[0m              = "Allow node to comunicate with each other."
+      [32m+[0m [0m[1m[0mfrom_port[0m[0m                = 0
+      [32m+[0m [0m[1m[0mid[0m[0m                       = (known after apply)
+      [32m+[0m [0m[1m[0mprotocol[0m[0m                 = "-1"
+      [32m+[0m [0m[1m[0msecurity_group_id[0m[0m        = (known after apply)
+      [32m+[0m [0m[1m[0mself[0m[0m                     = true
+      [32m+[0m [0m[1m[0msource_security_group_id[0m[0m = (known after apply)
+      [32m+[0m [0m[1m[0mto_port[0m[0m                  = 0
+      [32m+[0m [0m[1m[0mtype[0m[0m                     = "ingress"
+    }
+
+[1m  # kubernetes_config_map.sas_iac_buildinfo[0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "kubernetes_config_map" "sas_iac_buildinfo" {
+      [32m+[0m [0m[1m[0mdata[0m[0m = (known after apply)
+      [32m+[0m [0m[1m[0mid[0m[0m   = (known after apply)
+
+      [32m+[0m [0mmetadata {
+          [32m+[0m [0m[1m[0mgeneration[0m[0m       = (known after apply)
+          [32m+[0m [0m[1m[0mname[0m[0m             = "sas-iac-buildinfo"
+          [32m+[0m [0m[1m[0mnamespace[0m[0m        = "kube-system"
+          [32m+[0m [0m[1m[0mresource_version[0m[0m = (known after apply)
+          [32m+[0m [0m[1m[0mself_link[0m[0m        = (known after apply)
+          [32m+[0m [0m[1m[0muid[0m[0m              = (known after apply)
+        }
+    }
+
+[1m  # module.autoscaling[0].aws_iam_policy.worker_autoscaling[0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_iam_policy" "worker_autoscaling" {
+      [32m+[0m [0m[1m[0marn[0m[0m         = (known after apply)
+      [32m+[0m [0m[1m[0mdescription[0m[0m = "EKS worker node autoscaling policy for cluster viya-eks"
+      [32m+[0m [0m[1m[0mid[0m[0m          = (known after apply)
+      [32m+[0m [0m[1m[0mname[0m[0m        = (known after apply)
+      [32m+[0m [0m[1m[0mname_prefix[0m[0m = "viya-eks-worker-autoscaling"
+      [32m+[0m [0m[1m[0mpath[0m[0m        = "/"
+      [32m+[0m [0m[1m[0mpolicy[0m[0m      = jsonencode(
+            {
+              [32m+[0m [0mStatement = [
+                  [32m+[0m [0m{
+                      [32m+[0m [0mAction   = [
+                          [32m+[0m [0m"ec2:DescribeLaunchTemplateVersions",
+                          [32m+[0m [0m"autoscaling:DescribeTags",
+                          [32m+[0m [0m"autoscaling:DescribeLaunchConfigurations",
+                          [32m+[0m [0m"autoscaling:DescribeAutoScalingInstances",
+                          [32m+[0m [0m"autoscaling:DescribeAutoScalingGroups",
+                        ]
+                      [32m+[0m [0mEffect   = "Allow"
+                      [32m+[0m [0mResource = "*"
+                      [32m+[0m [0mSid      = "eksWorkerAutoscalingAll"
+                    },
+                  [32m+[0m [0m{
+                      [32m+[0m [0mAction    = [
+                          [32m+[0m [0m"autoscaling:UpdateAutoScalingGroup",
+                          [32m+[0m [0m"autoscaling:TerminateInstanceInAutoScalingGroup",
+                          [32m+[0m [0m"autoscaling:SetDesiredCapacity",
+                        ]
+                      [32m+[0m [0mCondition = {
+                          [32m+[0m [0mStringEquals = {
+                              [32m+[0m [0mautoscaling:ResourceTag/k8s.io/cluster-autoscaler/enabled = [
+                                  [32m+[0m [0m"true",
+                                ]
+                              [32m+[0m [0mautoscaling:ResourceTag/kubernetes.io/cluster/viya-eks    = [
+                                  [32m+[0m [0m"owned",
+                                ]
+                            }
+                        }
+                      [32m+[0m [0mEffect    = "Allow"
+                      [32m+[0m [0mResource  = "*"
+                      [32m+[0m [0mSid       = "eksWorkerAutoscalingOwn"
+                    },
+                ]
+              [32m+[0m [0mVersion   = "2012-10-17"
+            }
+        )
+      [32m+[0m [0m[1m[0mpolicy_id[0m[0m   = (known after apply)
+      [32m+[0m [0m[1m[0mtags[0m[0m        = {
+          [32m+[0m [0m"customer"    = "bnl"
+          [32m+[0m [0m"environment" = "development"
+          [32m+[0m [0m"owner"       = "sysadmin"
+          [32m+[0m [0m"project"     = "viya"
+        }
+      [32m+[0m [0m[1m[0mtags_all[0m[0m    = {
+          [32m+[0m [0m"customer"    = "bnl"
+          [32m+[0m [0m"environment" = "development"
+          [32m+[0m [0m"owner"       = "sysadmin"
+          [32m+[0m [0m"project"     = "viya"
+        }
+    }
+
+[1m  # module.eks.data.http.wait_for_cluster[0][0m will be read during apply
+  # (config refers to values not yet known)[0m[0m
+[0m [36m<=[0m[0m data "http" "wait_for_cluster"  {
+      [32m+[0m [0m[1m[0mbody[0m[0m             = (known after apply)
+      [32m+[0m [0m[1m[0mca_certificate[0m[0m   = (known after apply)
+      [32m+[0m [0m[1m[0mid[0m[0m               = (known after apply)
+      [32m+[0m [0m[1m[0mresponse_headers[0m[0m = (known after apply)
+      [32m+[0m [0m[1m[0mtimeout[0m[0m          = 300
+      [32m+[0m [0m[1m[0murl[0m[0m              = (known after apply)
+    }
+
+[1m  # module.eks.aws_autoscaling_group.workers[0][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_autoscaling_group" "workers" {
+      [32m+[0m [0m[1m[0marn[0m[0m                       = (known after apply)
+      [32m+[0m [0m[1m[0mavailability_zones[0m[0m        = (known after apply)
+      [32m+[0m [0m[1m[0mcapacity_rebalance[0m[0m        = false
+      [32m+[0m [0m[1m[0mdefault_cooldown[0m[0m          = (known after apply)
+      [32m+[0m [0m[1m[0mdesired_capacity[0m[0m          = 1
+      [32m+[0m [0m[1m[0mforce_delete[0m[0m              = false
+      [32m+[0m [0m[1m[0mforce_delete_warm_pool[0m[0m    = false
+      [32m+[0m [0m[1m[0mhealth_check_grace_period[0m[0m = 300
+      [32m+[0m [0m[1m[0mhealth_check_type[0m[0m         = (known after apply)
+      [32m+[0m [0m[1m[0mid[0m[0m                        = (known after apply)
+      [32m+[0m [0m[1m[0mlaunch_configuration[0m[0m      = (known after apply)
+      [32m+[0m [0m[1m[0mmax_instance_lifetime[0m[0m     = 0
+      [32m+[0m [0m[1m[0mmax_size[0m[0m                  = 5
+      [32m+[0m [0m[1m[0mmetrics_granularity[0m[0m       = "1Minute"
+      [32m+[0m [0m[1m[0mmin_size[0m[0m                  = 1
+      [32m+[0m [0m[1m[0mname[0m[0m                      = (known after apply)
+      [32m+[0m [0m[1m[0mname_prefix[0m[0m               = "viya-eks-default"
+      [32m+[0m [0m[1m[0mprotect_from_scale_in[0m[0m     = false
+      [32m+[0m [0m[1m[0mservice_linked_role_arn[0m[0m   = (known after apply)
+      [32m+[0m [0m[1m[0msuspended_processes[0m[0m       = [
+          [32m+[0m [0m"AZRebalance",
+        ]
+      [32m+[0m [0m[1m[0mtermination_policies[0m[0m      = []
+      [32m+[0m [0m[1m[0mvpc_zone_identifier[0m[0m       = (known after apply)
+      [32m+[0m [0m[1m[0mwait_for_capacity_timeout[0m[0m = "10m"
+
+      [32m+[0m [0mtag {
+          [32m+[0m [0m[1m[0mkey[0m[0m                 = "Name"
+          [32m+[0m [0m[1m[0mpropagate_at_launch[0m[0m = true
+          [32m+[0m [0m[1m[0mvalue[0m[0m               = "viya-eks-default-eks_asg"
+        }
+      [32m+[0m [0mtag {
+          [32m+[0m [0m[1m[0mkey[0m[0m                 = "customer"
+          [32m+[0m [0m[1m[0mpropagate_at_launch[0m[0m = true
+          [32m+[0m [0m[1m[0mvalue[0m[0m               = "bnl"
+        }
+      [32m+[0m [0mtag {
+          [32m+[0m [0m[1m[0mkey[0m[0m                 = "environment"
+          [32m+[0m [0m[1m[0mpropagate_at_launch[0m[0m = true
+          [32m+[0m [0m[1m[0mvalue[0m[0m               = "development"
+        }
+      [32m+[0m [0mtag {
+          [32m+[0m [0m[1m[0mkey[0m[0m                 = "k8s.io/cluster-autoscaler/enabled"
+          [32m+[0m [0m[1m[0mpropagate_at_launch[0m[0m = true
+          [32m+[0m [0m[1m[0mvalue[0m[0m               = "true"
+        }
+      [32m+[0m [0mtag {
+          [32m+[0m [0m[1m[0mkey[0m[0m                 = "k8s.io/cluster-autoscaler/viya-eks"
+          [32m+[0m [0m[1m[0mpropagate_at_launch[0m[0m = true
+          [32m+[0m [0m[1m[0mvalue[0m[0m               = "owned"
+        }
+      [32m+[0m [0mtag {
+          [32m+[0m [0m[1m[0mkey[0m[0m                 = "k8s.io/cluster/viya-eks"
+          [32m+[0m [0m[1m[0mpropagate_at_launch[0m[0m = true
+          [32m+[0m [0m[1m[0mvalue[0m[0m               = "owned"
+        }
+      [32m+[0m [0mtag {
+          [32m+[0m [0m[1m[0mkey[0m[0m                 = "kubernetes.io/cluster/viya-eks"
+          [32m+[0m [0m[1m[0mpropagate_at_launch[0m[0m = true
+          [32m+[0m [0m[1m[0mvalue[0m[0m               = "owned"
+        }
+      [32m+[0m [0mtag {
+          [32m+[0m [0m[1m[0mkey[0m[0m                 = "owner"
+          [32m+[0m [0m[1m[0mpropagate_at_launch[0m[0m = true
+          [32m+[0m [0m[1m[0mvalue[0m[0m               = "sysadmin"
+        }
+      [32m+[0m [0mtag {
+          [32m+[0m [0m[1m[0mkey[0m[0m                 = "project"
+          [32m+[0m [0m[1m[0mpropagate_at_launch[0m[0m = true
+          [32m+[0m [0m[1m[0mvalue[0m[0m               = "viya"
+        }
+    }
+
+[1m  # module.eks.aws_autoscaling_group.workers[1][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_autoscaling_group" "workers" {
+      [32m+[0m [0m[1m[0marn[0m[0m                       = (known after apply)
+      [32m+[0m [0m[1m[0mavailability_zones[0m[0m        = (known after apply)
+      [32m+[0m [0m[1m[0mcapacity_rebalance[0m[0m        = false
+      [32m+[0m [0m[1m[0mdefault_cooldown[0m[0m          = (known after apply)
+      [32m+[0m [0m[1m[0mdesired_capacity[0m[0m          = 1
+      [32m+[0m [0m[1m[0mforce_delete[0m[0m              = false
+      [32m+[0m [0m[1m[0mforce_delete_warm_pool[0m[0m    = false
+      [32m+[0m [0m[1m[0mhealth_check_grace_period[0m[0m = 300
+      [32m+[0m [0m[1m[0mhealth_check_type[0m[0m         = (known after apply)
+      [32m+[0m [0m[1m[0mid[0m[0m                        = (known after apply)
+      [32m+[0m [0m[1m[0mlaunch_configuration[0m[0m      = (known after apply)
+      [32m+[0m [0m[1m[0mmax_instance_lifetime[0m[0m     = 0
+      [32m+[0m [0m[1m[0mmax_size[0m[0m                  = 5
+      [32m+[0m [0m[1m[0mmetrics_granularity[0m[0m       = "1Minute"
+      [32m+[0m [0m[1m[0mmin_size[0m[0m                  = 0
+      [32m+[0m [0m[1m[0mname[0m[0m                      = (known after apply)
+      [32m+[0m [0m[1m[0mname_prefix[0m[0m               = "viya-eks-cas"
+      [32m+[0m [0m[1m[0mprotect_from_scale_in[0m[0m     = false
+      [32m+[0m [0m[1m[0mservice_linked_role_arn[0m[0m   = (known after apply)
+      [32m+[0m [0m[1m[0msuspended_processes[0m[0m       = [
+          [32m+[0m [0m"AZRebalance",
+        ]
+      [32m+[0m [0m[1m[0mtermination_policies[0m[0m      = []
+      [32m+[0m [0m[1m[0mvpc_zone_identifier[0m[0m       = (known after apply)
+      [32m+[0m [0m[1m[0mwait_for_capacity_timeout[0m[0m = "10m"
+
+      [32m+[0m [0mtag {
+          [32m+[0m [0m[1m[0mkey[0m[0m                 = "Name"
+          [32m+[0m [0m[1m[0mpropagate_at_launch[0m[0m = true
+          [32m+[0m [0m[1m[0mvalue[0m[0m               = "viya-eks-cas-eks_asg"
+        }
+      [32m+[0m [0mtag {
+          [32m+[0m [0m[1m[0mkey[0m[0m                 = "customer"
+          [32m+[0m [0m[1m[0mpropagate_at_launch[0m[0m = true
+          [32m+[0m [0m[1m[0mvalue[0m[0m               = "bnl"
+        }
+      [32m+[0m [0mtag {
+          [32m+[0m [0m[1m[0mkey[0m[0m                 = "environment"
+          [32m+[0m [0m[1m[0mpropagate_at_launch[0m[0m = true
+          [32m+[0m [0m[1m[0mvalue[0m[0m               = "development"
+        }
+      [32m+[0m [0mtag {
+          [32m+[0m [0m[1m[0mkey[0m[0m                 = "k8s.io/cluster-autoscaler/enabled"
+          [32m+[0m [0m[1m[0mpropagate_at_launch[0m[0m = true
+          [32m+[0m [0m[1m[0mvalue[0m[0m               = "true"
+        }
+      [32m+[0m [0mtag {
+          [32m+[0m [0m[1m[0mkey[0m[0m                 = "k8s.io/cluster-autoscaler/viya-eks"
+          [32m+[0m [0m[1m[0mpropagate_at_launch[0m[0m = true
+          [32m+[0m [0m[1m[0mvalue[0m[0m               = "owned"
+        }
+      [32m+[0m [0mtag {
+          [32m+[0m [0m[1m[0mkey[0m[0m                 = "k8s.io/cluster/viya-eks"
+          [32m+[0m [0m[1m[0mpropagate_at_launch[0m[0m = true
+          [32m+[0m [0m[1m[0mvalue[0m[0m               = "owned"
+        }
+      [32m+[0m [0mtag {
+          [32m+[0m [0m[1m[0mkey[0m[0m                 = "kubernetes.io/cluster/viya-eks"
+          [32m+[0m [0m[1m[0mpropagate_at_launch[0m[0m = true
+          [32m+[0m [0m[1m[0mvalue[0m[0m               = "owned"
+        }
+      [32m+[0m [0mtag {
+          [32m+[0m [0m[1m[0mkey[0m[0m                 = "owner"
+          [32m+[0m [0m[1m[0mpropagate_at_launch[0m[0m = true
+          [32m+[0m [0m[1m[0mvalue[0m[0m               = "sysadmin"
+        }
+      [32m+[0m [0mtag {
+          [32m+[0m [0m[1m[0mkey[0m[0m                 = "project"
+          [32m+[0m [0m[1m[0mpropagate_at_launch[0m[0m = true
+          [32m+[0m [0m[1m[0mvalue[0m[0m               = "viya"
+        }
+    }
+
+[1m  # module.eks.aws_autoscaling_group.workers[2][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_autoscaling_group" "workers" {
+      [32m+[0m [0m[1m[0marn[0m[0m                       = (known after apply)
+      [32m+[0m [0m[1m[0mavailability_zones[0m[0m        = (known after apply)
+      [32m+[0m [0m[1m[0mcapacity_rebalance[0m[0m        = false
+      [32m+[0m [0m[1m[0mdefault_cooldown[0m[0m          = (known after apply)
+      [32m+[0m [0m[1m[0mdesired_capacity[0m[0m          = 1
+      [32m+[0m [0m[1m[0mforce_delete[0m[0m              = false
+      [32m+[0m [0m[1m[0mforce_delete_warm_pool[0m[0m    = false
+      [32m+[0m [0m[1m[0mhealth_check_grace_period[0m[0m = 300
+      [32m+[0m [0m[1m[0mhealth_check_type[0m[0m         = (known after apply)
+      [32m+[0m [0m[1m[0mid[0m[0m                        = (known after apply)
+      [32m+[0m [0m[1m[0mlaunch_configuration[0m[0m      = (known after apply)
+      [32m+[0m [0m[1m[0mmax_instance_lifetime[0m[0m     = 0
+      [32m+[0m [0m[1m[0mmax_size[0m[0m                  = 5
+      [32m+[0m [0m[1m[0mmetrics_granularity[0m[0m       = "1Minute"
+      [32m+[0m [0m[1m[0mmin_size[0m[0m                  = 0
+      [32m+[0m [0m[1m[0mname[0m[0m                      = (known after apply)
+      [32m+[0m [0m[1m[0mname_prefix[0m[0m               = "viya-eks-generic"
+      [32m+[0m [0m[1m[0mprotect_from_scale_in[0m[0m     = false
+      [32m+[0m [0m[1m[0mservice_linked_role_arn[0m[0m   = (known after apply)
+      [32m+[0m [0m[1m[0msuspended_processes[0m[0m       = [
+          [32m+[0m [0m"AZRebalance",
+        ]
+      [32m+[0m [0m[1m[0mtermination_policies[0m[0m      = []
+      [32m+[0m [0m[1m[0mvpc_zone_identifier[0m[0m       = (known after apply)
+      [32m+[0m [0m[1m[0mwait_for_capacity_timeout[0m[0m = "10m"
+
+      [32m+[0m [0mtag {
+          [32m+[0m [0m[1m[0mkey[0m[0m                 = "Name"
+          [32m+[0m [0m[1m[0mpropagate_at_launch[0m[0m = true
+          [32m+[0m [0m[1m[0mvalue[0m[0m               = "viya-eks-generic-eks_asg"
+        }
+      [32m+[0m [0mtag {
+          [32m+[0m [0m[1m[0mkey[0m[0m                 = "customer"
+          [32m+[0m [0m[1m[0mpropagate_at_launch[0m[0m = true
+          [32m+[0m [0m[1m[0mvalue[0m[0m               = "bnl"
+        }
+      [32m+[0m [0mtag {
+          [32m+[0m [0m[1m[0mkey[0m[0m                 = "environment"
+          [32m+[0m [0m[1m[0mpropagate_at_launch[0m[0m = true
+          [32m+[0m [0m[1m[0mvalue[0m[0m               = "development"
+        }
+      [32m+[0m [0mtag {
+          [32m+[0m [0m[1m[0mkey[0m[0m                 = "k8s.io/cluster-autoscaler/enabled"
+          [32m+[0m [0m[1m[0mpropagate_at_launch[0m[0m = true
+          [32m+[0m [0m[1m[0mvalue[0m[0m               = "true"
+        }
+      [32m+[0m [0mtag {
+          [32m+[0m [0m[1m[0mkey[0m[0m                 = "k8s.io/cluster-autoscaler/viya-eks"
+          [32m+[0m [0m[1m[0mpropagate_at_launch[0m[0m = true
+          [32m+[0m [0m[1m[0mvalue[0m[0m               = "owned"
+        }
+      [32m+[0m [0mtag {
+          [32m+[0m [0m[1m[0mkey[0m[0m                 = "k8s.io/cluster/viya-eks"
+          [32m+[0m [0m[1m[0mpropagate_at_launch[0m[0m = true
+          [32m+[0m [0m[1m[0mvalue[0m[0m               = "owned"
+        }
+      [32m+[0m [0mtag {
+          [32m+[0m [0m[1m[0mkey[0m[0m                 = "kubernetes.io/cluster/viya-eks"
+          [32m+[0m [0m[1m[0mpropagate_at_launch[0m[0m = true
+          [32m+[0m [0m[1m[0mvalue[0m[0m               = "owned"
+        }
+      [32m+[0m [0mtag {
+          [32m+[0m [0m[1m[0mkey[0m[0m                 = "owner"
+          [32m+[0m [0m[1m[0mpropagate_at_launch[0m[0m = true
+          [32m+[0m [0m[1m[0mvalue[0m[0m               = "sysadmin"
+        }
+      [32m+[0m [0mtag {
+          [32m+[0m [0m[1m[0mkey[0m[0m                 = "project"
+          [32m+[0m [0m[1m[0mpropagate_at_launch[0m[0m = true
+          [32m+[0m [0m[1m[0mvalue[0m[0m               = "viya"
+        }
+    }
+
+[1m  # module.eks.aws_eks_cluster.this[0][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_eks_cluster" "this" {
+      [32m+[0m [0m[1m[0marn[0m[0m                   = (known after apply)
+      [32m+[0m [0m[1m[0mcertificate_authority[0m[0m = (known after apply)
+      [32m+[0m [0m[1m[0mcreated_at[0m[0m            = (known after apply)
+      [32m+[0m [0m[1m[0mendpoint[0m[0m              = (known after apply)
+      [32m+[0m [0m[1m[0mid[0m[0m                    = (known after apply)
+      [32m+[0m [0m[1m[0midentity[0m[0m              = (known after apply)
+      [32m+[0m [0m[1m[0mname[0m[0m                  = "viya-eks"
+      [32m+[0m [0m[1m[0mplatform_version[0m[0m      = (known after apply)
+      [32m+[0m [0m[1m[0mrole_arn[0m[0m              = (known after apply)
+      [32m+[0m [0m[1m[0mstatus[0m[0m                = (known after apply)
+      [32m+[0m [0m[1m[0mtags[0m[0m                  = {
+          [32m+[0m [0m"customer"    = "bnl"
+          [32m+[0m [0m"environment" = "development"
+          [32m+[0m [0m"owner"       = "sysadmin"
+          [32m+[0m [0m"project"     = "viya"
+        }
+      [32m+[0m [0m[1m[0mtags_all[0m[0m              = {
+          [32m+[0m [0m"customer"    = "bnl"
+          [32m+[0m [0m"environment" = "development"
+          [32m+[0m [0m"owner"       = "sysadmin"
+          [32m+[0m [0m"project"     = "viya"
+        }
+      [32m+[0m [0m[1m[0mversion[0m[0m               = "1.19"
+
+      [32m+[0m [0mkubernetes_network_config {
+          [32m+[0m [0m[1m[0mservice_ipv4_cidr[0m[0m = (known after apply)
+        }
+
+      [32m+[0m [0mtimeouts {
+          [32m+[0m [0m[1m[0mcreate[0m[0m = "30m"
+          [32m+[0m [0m[1m[0mdelete[0m[0m = "15m"
+        }
+
+      [32m+[0m [0mvpc_config {
+          [32m+[0m [0m[1m[0mcluster_security_group_id[0m[0m = (known after apply)
+          [32m+[0m [0m[1m[0mendpoint_private_access[0m[0m   = true
+          [32m+[0m [0m[1m[0mendpoint_public_access[0m[0m    = true
+          [32m+[0m [0m[1m[0mpublic_access_cidrs[0m[0m       = (known after apply)
+          [32m+[0m [0m[1m[0msecurity_group_ids[0m[0m        = (known after apply)
+          [32m+[0m [0m[1m[0msubnet_ids[0m[0m                = (known after apply)
+          [32m+[0m [0m[1m[0mvpc_id[0m[0m                    = (known after apply)
+        }
+    }
+
+[1m  # module.eks.aws_iam_instance_profile.workers[0][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_iam_instance_profile" "workers" {
+      [32m+[0m [0m[1m[0marn[0m[0m         = (known after apply)
+      [32m+[0m [0m[1m[0mcreate_date[0m[0m = (known after apply)
+      [32m+[0m [0m[1m[0mid[0m[0m          = (known after apply)
+      [32m+[0m [0m[1m[0mname[0m[0m        = (known after apply)
+      [32m+[0m [0m[1m[0mname_prefix[0m[0m = "viya-eks"
+      [32m+[0m [0m[1m[0mpath[0m[0m        = "/"
+      [32m+[0m [0m[1m[0mrole[0m[0m        = (known after apply)
+      [32m+[0m [0m[1m[0mtags[0m[0m        = {
+          [32m+[0m [0m"customer"    = "bnl"
+          [32m+[0m [0m"environment" = "development"
+          [32m+[0m [0m"owner"       = "sysadmin"
+          [32m+[0m [0m"project"     = "viya"
+        }
+      [32m+[0m [0m[1m[0mtags_all[0m[0m    = {
+          [32m+[0m [0m"customer"    = "bnl"
+          [32m+[0m [0m"environment" = "development"
+          [32m+[0m [0m"owner"       = "sysadmin"
+          [32m+[0m [0m"project"     = "viya"
+        }
+      [32m+[0m [0m[1m[0munique_id[0m[0m   = (known after apply)
+    }
+
+[1m  # module.eks.aws_iam_instance_profile.workers[1][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_iam_instance_profile" "workers" {
+      [32m+[0m [0m[1m[0marn[0m[0m         = (known after apply)
+      [32m+[0m [0m[1m[0mcreate_date[0m[0m = (known after apply)
+      [32m+[0m [0m[1m[0mid[0m[0m          = (known after apply)
+      [32m+[0m [0m[1m[0mname[0m[0m        = (known after apply)
+      [32m+[0m [0m[1m[0mname_prefix[0m[0m = "viya-eks"
+      [32m+[0m [0m[1m[0mpath[0m[0m        = "/"
+      [32m+[0m [0m[1m[0mrole[0m[0m        = (known after apply)
+      [32m+[0m [0m[1m[0mtags[0m[0m        = {
+          [32m+[0m [0m"customer"    = "bnl"
+          [32m+[0m [0m"environment" = "development"
+          [32m+[0m [0m"owner"       = "sysadmin"
+          [32m+[0m [0m"project"     = "viya"
+        }
+      [32m+[0m [0m[1m[0mtags_all[0m[0m    = {
+          [32m+[0m [0m"customer"    = "bnl"
+          [32m+[0m [0m"environment" = "development"
+          [32m+[0m [0m"owner"       = "sysadmin"
+          [32m+[0m [0m"project"     = "viya"
+        }
+      [32m+[0m [0m[1m[0munique_id[0m[0m   = (known after apply)
+    }
+
+[1m  # module.eks.aws_iam_instance_profile.workers[2][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_iam_instance_profile" "workers" {
+      [32m+[0m [0m[1m[0marn[0m[0m         = (known after apply)
+      [32m+[0m [0m[1m[0mcreate_date[0m[0m = (known after apply)
+      [32m+[0m [0m[1m[0mid[0m[0m          = (known after apply)
+      [32m+[0m [0m[1m[0mname[0m[0m        = (known after apply)
+      [32m+[0m [0m[1m[0mname_prefix[0m[0m = "viya-eks"
+      [32m+[0m [0m[1m[0mpath[0m[0m        = "/"
+      [32m+[0m [0m[1m[0mrole[0m[0m        = (known after apply)
+      [32m+[0m [0m[1m[0mtags[0m[0m        = {
+          [32m+[0m [0m"customer"    = "bnl"
+          [32m+[0m [0m"environment" = "development"
+          [32m+[0m [0m"owner"       = "sysadmin"
+          [32m+[0m [0m"project"     = "viya"
+        }
+      [32m+[0m [0m[1m[0mtags_all[0m[0m    = {
+          [32m+[0m [0m"customer"    = "bnl"
+          [32m+[0m [0m"environment" = "development"
+          [32m+[0m [0m"owner"       = "sysadmin"
+          [32m+[0m [0m"project"     = "viya"
+        }
+      [32m+[0m [0m[1m[0munique_id[0m[0m   = (known after apply)
+    }
+
+[1m  # module.eks.aws_iam_openid_connect_provider.oidc_provider[0][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_iam_openid_connect_provider" "oidc_provider" {
+      [32m+[0m [0m[1m[0marn[0m[0m             = (known after apply)
+      [32m+[0m [0m[1m[0mclient_id_list[0m[0m  = [
+          [32m+[0m [0m"sts.amazonaws.com",
+        ]
+      [32m+[0m [0m[1m[0mid[0m[0m              = (known after apply)
+      [32m+[0m [0m[1m[0mtags[0m[0m            = {
+          [32m+[0m [0m"Name"        = "viya-eks-eks-irsa"
+          [32m+[0m [0m"customer"    = "bnl"
+          [32m+[0m [0m"environment" = "development"
+          [32m+[0m [0m"owner"       = "sysadmin"
+          [32m+[0m [0m"project"     = "viya"
+        }
+      [32m+[0m [0m[1m[0mtags_all[0m[0m        = {
+          [32m+[0m [0m"Name"        = "viya-eks-eks-irsa"
+          [32m+[0m [0m"customer"    = "bnl"
+          [32m+[0m [0m"environment" = "development"
+          [32m+[0m [0m"owner"       = "sysadmin"
+          [32m+[0m [0m"project"     = "viya"
+        }
+      [32m+[0m [0m[1m[0mthumbprint_list[0m[0m = [
+          [32m+[0m [0m"9e99a48a9960b14926bb7f3b02e22da2b0ab7280",
+        ]
+      [32m+[0m [0m[1m[0murl[0m[0m             = (known after apply)
+    }
+
+[1m  # module.eks.aws_iam_policy.cluster_elb_sl_role_creation[0][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_iam_policy" "cluster_elb_sl_role_creation" {
+      [32m+[0m [0m[1m[0marn[0m[0m         = (known after apply)
+      [32m+[0m [0m[1m[0mdescription[0m[0m = "Permissions for EKS to create AWSServiceRoleForElasticLoadBalancing service-linked role"
+      [32m+[0m [0m[1m[0mid[0m[0m          = (known after apply)
+      [32m+[0m [0m[1m[0mname[0m[0m        = (known after apply)
+      [32m+[0m [0m[1m[0mname_prefix[0m[0m = "viya-eks-elb-sl-role-creation"
+      [32m+[0m [0m[1m[0mpath[0m[0m        = "/"
+      [32m+[0m [0m[1m[0mpolicy[0m[0m      = jsonencode(
+            {
+              [32m+[0m [0mStatement = [
+                  [32m+[0m [0m{
+                      [32m+[0m [0mAction   = [
+                          [32m+[0m [0m"ec2:DescribeInternetGateways",
+                          [32m+[0m [0m"ec2:DescribeAddresses",
+                          [32m+[0m [0m"ec2:DescribeAccountAttributes",
+                        ]
+                      [32m+[0m [0mEffect   = "Allow"
+                      [32m+[0m [0mResource = "*"
+                      [32m+[0m [0mSid      = ""
+                    },
+                ]
+              [32m+[0m [0mVersion   = "2012-10-17"
+            }
+        )
+      [32m+[0m [0m[1m[0mpolicy_id[0m[0m   = (known after apply)
+      [32m+[0m [0m[1m[0mtags[0m[0m        = {
+          [32m+[0m [0m"customer"    = "bnl"
+          [32m+[0m [0m"environment" = "development"
+          [32m+[0m [0m"owner"       = "sysadmin"
+          [32m+[0m [0m"project"     = "viya"
+        }
+      [32m+[0m [0m[1m[0mtags_all[0m[0m    = {
+          [32m+[0m [0m"customer"    = "bnl"
+          [32m+[0m [0m"environment" = "development"
+          [32m+[0m [0m"owner"       = "sysadmin"
+          [32m+[0m [0m"project"     = "viya"
+        }
+    }
+
+[1m  # module.eks.aws_iam_role.cluster[0][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_iam_role" "cluster" {
+      [32m+[0m [0m[1m[0marn[0m[0m                   = (known after apply)
+      [32m+[0m [0m[1m[0massume_role_policy[0m[0m    = jsonencode(
+            {
+              [32m+[0m [0mStatement = [
+                  [32m+[0m [0m{
+                      [32m+[0m [0mAction    = "sts:AssumeRole"
+                      [32m+[0m [0mEffect    = "Allow"
+                      [32m+[0m [0mPrincipal = {
+                          [32m+[0m [0mService = "eks.amazonaws.com"
+                        }
+                      [32m+[0m [0mSid       = "EKSClusterAssumeRole"
+                    },
+                ]
+              [32m+[0m [0mVersion   = "2012-10-17"
+            }
+        )
+      [32m+[0m [0m[1m[0mcreate_date[0m[0m           = (known after apply)
+      [32m+[0m [0m[1m[0mforce_detach_policies[0m[0m = true
+      [32m+[0m [0m[1m[0mid[0m[0m                    = (known after apply)
+      [32m+[0m [0m[1m[0mmanaged_policy_arns[0m[0m   = (known after apply)
+      [32m+[0m [0m[1m[0mmax_session_duration[0m[0m  = 3600
+      [32m+[0m [0m[1m[0mname[0m[0m                  = (known after apply)
+      [32m+[0m [0m[1m[0mpath[0m[0m                  = "/"
+      [32m+[0m [0m[1m[0mtags[0m[0m                  = {
+          [32m+[0m [0m"customer"    = "bnl"
+          [32m+[0m [0m"environment" = "development"
+          [32m+[0m [0m"owner"       = "sysadmin"
+          [32m+[0m [0m"project"     = "viya"
+        }
+      [32m+[0m [0m[1m[0mtags_all[0m[0m              = {
+          [32m+[0m [0m"customer"    = "bnl"
+          [32m+[0m [0m"environment" = "development"
+          [32m+[0m [0m"owner"       = "sysadmin"
+          [32m+[0m [0m"project"     = "viya"
+        }
+      [32m+[0m [0m[1m[0munique_id[0m[0m             = (known after apply)
+
+      [32m+[0m [0minline_policy {
+          [32m+[0m [0m[1m[0mname[0m[0m   = (known after apply)
+          [32m+[0m [0m[1m[0mpolicy[0m[0m = (known after apply)
+        }
+    }
+
+[1m  # module.eks.aws_iam_role.workers[0][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_iam_role" "workers" {
+      [32m+[0m [0m[1m[0marn[0m[0m                   = (known after apply)
+      [32m+[0m [0m[1m[0massume_role_policy[0m[0m    = jsonencode(
+            {
+              [32m+[0m [0mStatement = [
+                  [32m+[0m [0m{
+                      [32m+[0m [0mAction    = "sts:AssumeRole"
+                      [32m+[0m [0mEffect    = "Allow"
+                      [32m+[0m [0mPrincipal = {
+                          [32m+[0m [0mService = "ec2.amazonaws.com"
+                        }
+                      [32m+[0m [0mSid       = "EKSWorkerAssumeRole"
+                    },
+                ]
+              [32m+[0m [0mVersion   = "2012-10-17"
+            }
+        )
+      [32m+[0m [0m[1m[0mcreate_date[0m[0m           = (known after apply)
+      [32m+[0m [0m[1m[0mforce_detach_policies[0m[0m = true
+      [32m+[0m [0m[1m[0mid[0m[0m                    = (known after apply)
+      [32m+[0m [0m[1m[0mmanaged_policy_arns[0m[0m   = (known after apply)
+      [32m+[0m [0m[1m[0mmax_session_duration[0m[0m  = 3600
+      [32m+[0m [0m[1m[0mname[0m[0m                  = (known after apply)
+      [32m+[0m [0m[1m[0mpath[0m[0m                  = "/"
+      [32m+[0m [0m[1m[0mtags[0m[0m                  = {
+          [32m+[0m [0m"customer"    = "bnl"
+          [32m+[0m [0m"environment" = "development"
+          [32m+[0m [0m"owner"       = "sysadmin"
+          [32m+[0m [0m"project"     = "viya"
+        }
+      [32m+[0m [0m[1m[0mtags_all[0m[0m              = {
+          [32m+[0m [0m"customer"    = "bnl"
+          [32m+[0m [0m"environment" = "development"
+          [32m+[0m [0m"owner"       = "sysadmin"
+          [32m+[0m [0m"project"     = "viya"
+        }
+      [32m+[0m [0m[1m[0munique_id[0m[0m             = (known after apply)
+
+      [32m+[0m [0minline_policy {
+          [32m+[0m [0m[1m[0mname[0m[0m   = (known after apply)
+          [32m+[0m [0m[1m[0mpolicy[0m[0m = (known after apply)
+        }
+    }
+
+[1m  # module.eks.aws_iam_role_policy_attachment.cluster_AmazonEKSClusterPolicy[0][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_iam_role_policy_attachment" "cluster_AmazonEKSClusterPolicy" {
+      [32m+[0m [0m[1m[0mid[0m[0m         = (known after apply)
+      [32m+[0m [0m[1m[0mpolicy_arn[0m[0m = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
+      [32m+[0m [0m[1m[0mrole[0m[0m       = (known after apply)
+    }
+
+[1m  # module.eks.aws_iam_role_policy_attachment.cluster_AmazonEKSServicePolicy[0][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_iam_role_policy_attachment" "cluster_AmazonEKSServicePolicy" {
+      [32m+[0m [0m[1m[0mid[0m[0m         = (known after apply)
+      [32m+[0m [0m[1m[0mpolicy_arn[0m[0m = "arn:aws:iam::aws:policy/AmazonEKSServicePolicy"
+      [32m+[0m [0m[1m[0mrole[0m[0m       = (known after apply)
+    }
+
+[1m  # module.eks.aws_iam_role_policy_attachment.cluster_AmazonEKSVPCResourceControllerPolicy[0][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_iam_role_policy_attachment" "cluster_AmazonEKSVPCResourceControllerPolicy" {
+      [32m+[0m [0m[1m[0mid[0m[0m         = (known after apply)
+      [32m+[0m [0m[1m[0mpolicy_arn[0m[0m = "arn:aws:iam::aws:policy/AmazonEKSVPCResourceController"
+      [32m+[0m [0m[1m[0mrole[0m[0m       = (known after apply)
+    }
+
+[1m  # module.eks.aws_iam_role_policy_attachment.cluster_elb_sl_role_creation[0][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_iam_role_policy_attachment" "cluster_elb_sl_role_creation" {
+      [32m+[0m [0m[1m[0mid[0m[0m         = (known after apply)
+      [32m+[0m [0m[1m[0mpolicy_arn[0m[0m = (known after apply)
+      [32m+[0m [0m[1m[0mrole[0m[0m       = (known after apply)
+    }
+
+[1m  # module.eks.aws_iam_role_policy_attachment.workers_AmazonEC2ContainerRegistryReadOnly[0][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_iam_role_policy_attachment" "workers_AmazonEC2ContainerRegistryReadOnly" {
+      [32m+[0m [0m[1m[0mid[0m[0m         = (known after apply)
+      [32m+[0m [0m[1m[0mpolicy_arn[0m[0m = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
+      [32m+[0m [0m[1m[0mrole[0m[0m       = (known after apply)
+    }
+
+[1m  # module.eks.aws_iam_role_policy_attachment.workers_AmazonEKSWorkerNodePolicy[0][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_iam_role_policy_attachment" "workers_AmazonEKSWorkerNodePolicy" {
+      [32m+[0m [0m[1m[0mid[0m[0m         = (known after apply)
+      [32m+[0m [0m[1m[0mpolicy_arn[0m[0m = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
+      [32m+[0m [0m[1m[0mrole[0m[0m       = (known after apply)
+    }
+
+[1m  # module.eks.aws_iam_role_policy_attachment.workers_AmazonEKS_CNI_Policy[0][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_iam_role_policy_attachment" "workers_AmazonEKS_CNI_Policy" {
+      [32m+[0m [0m[1m[0mid[0m[0m         = (known after apply)
+      [32m+[0m [0m[1m[0mpolicy_arn[0m[0m = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
+      [32m+[0m [0m[1m[0mrole[0m[0m       = (known after apply)
+    }
+
+[1m  # module.eks.aws_launch_configuration.workers[0][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_launch_configuration" "workers" {
+      [32m+[0m [0m[1m[0marn[0m[0m                         = (known after apply)
+      [32m+[0m [0m[1m[0massociate_public_ip_address[0m[0m = false
+      [32m+[0m [0m[1m[0mebs_optimized[0m[0m               = true
+      [32m+[0m [0m[1m[0menable_monitoring[0m[0m           = true
+      [32m+[0m [0m[1m[0miam_instance_profile[0m[0m        = (known after apply)
+      [32m+[0m [0m[1m[0mid[0m[0m                          = (known after apply)
+      [32m+[0m [0m[1m[0mimage_id[0m[0m                    = "ami-0abf006a31cf87b04"
+      [32m+[0m [0m[1m[0minstance_type[0m[0m               = "m5.large"
+      [32m+[0m [0m[1m[0mkey_name[0m[0m                    = (known after apply)
+      [32m+[0m [0m[1m[0mname[0m[0m                        = (known after apply)
+      [32m+[0m [0m[1m[0mname_prefix[0m[0m                 = "viya-eks-default"
+      [32m+[0m [0m[1m[0msecurity_groups[0m[0m             = (known after apply)
+      [32m+[0m [0m[1m[0muser_data_base64[0m[0m            = (known after apply)
+
+      [32m+[0m [0mebs_block_device {
+          [32m+[0m [0m[1m[0mdelete_on_termination[0m[0m = (known after apply)
+          [32m+[0m [0m[1m[0mdevice_name[0m[0m           = (known after apply)
+          [32m+[0m [0m[1m[0mencrypted[0m[0m             = (known after apply)
+          [32m+[0m [0m[1m[0miops[0m[0m                  = (known after apply)
+          [32m+[0m [0m[1m[0mno_device[0m[0m             = (known after apply)
+          [32m+[0m [0m[1m[0msnapshot_id[0m[0m           = (known after apply)
+          [32m+[0m [0m[1m[0mvolume_size[0m[0m           = (known after apply)
+          [32m+[0m [0m[1m[0mvolume_type[0m[0m           = (known after apply)
+        }
+
+      [32m+[0m [0mmetadata_options {
+          [32m+[0m [0m[1m[0mhttp_endpoint[0m[0m               = "enabled"
+          [32m+[0m [0m[1m[0mhttp_put_response_hop_limit[0m[0m = 1
+          [32m+[0m [0m[1m[0mhttp_tokens[0m[0m                 = "required"
+        }
+
+      [32m+[0m [0mroot_block_device {
+          [32m+[0m [0m[1m[0mdelete_on_termination[0m[0m = true
+          [32m+[0m [0m[1m[0mencrypted[0m[0m             = false
+          [32m+[0m [0m[1m[0miops[0m[0m                  = 0
+          [32m+[0m [0m[1m[0mvolume_size[0m[0m           = 200
+          [32m+[0m [0m[1m[0mvolume_type[0m[0m           = "gp2"
+        }
+    }
+
+[1m  # module.eks.aws_launch_configuration.workers[1][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_launch_configuration" "workers" {
+      [32m+[0m [0m[1m[0marn[0m[0m                         = (known after apply)
+      [32m+[0m [0m[1m[0massociate_public_ip_address[0m[0m = false
+      [32m+[0m [0m[1m[0mebs_optimized[0m[0m               = true
+      [32m+[0m [0m[1m[0menable_monitoring[0m[0m           = true
+      [32m+[0m [0m[1m[0miam_instance_profile[0m[0m        = (known after apply)
+      [32m+[0m [0m[1m[0mid[0m[0m                          = (known after apply)
+      [32m+[0m [0m[1m[0mimage_id[0m[0m                    = "ami-0abf006a31cf87b04"
+      [32m+[0m [0m[1m[0minstance_type[0m[0m               = "r5.xlarge"
+      [32m+[0m [0m[1m[0mkey_name[0m[0m                    = (known after apply)
+      [32m+[0m [0m[1m[0mname[0m[0m                        = (known after apply)
+      [32m+[0m [0m[1m[0mname_prefix[0m[0m                 = "viya-eks-cas"
+      [32m+[0m [0m[1m[0msecurity_groups[0m[0m             = (known after apply)
+      [32m+[0m [0m[1m[0muser_data_base64[0m[0m            = (known after apply)
+
+      [32m+[0m [0mebs_block_device {
+          [32m+[0m [0m[1m[0mdelete_on_termination[0m[0m = (known after apply)
+          [32m+[0m [0m[1m[0mdevice_name[0m[0m           = (known after apply)
+          [32m+[0m [0m[1m[0mencrypted[0m[0m             = (known after apply)
+          [32m+[0m [0m[1m[0miops[0m[0m                  = (known after apply)
+          [32m+[0m [0m[1m[0mno_device[0m[0m             = (known after apply)
+          [32m+[0m [0m[1m[0msnapshot_id[0m[0m           = (known after apply)
+          [32m+[0m [0m[1m[0mvolume_size[0m[0m           = (known after apply)
+          [32m+[0m [0m[1m[0mvolume_type[0m[0m           = (known after apply)
+        }
+
+      [32m+[0m [0mmetadata_options {
+          [32m+[0m [0m[1m[0mhttp_endpoint[0m[0m               = "enabled"
+          [32m+[0m [0m[1m[0mhttp_put_response_hop_limit[0m[0m = 1
+          [32m+[0m [0m[1m[0mhttp_tokens[0m[0m                 = "required"
+        }
+
+      [32m+[0m [0mroot_block_device {
+          [32m+[0m [0m[1m[0mdelete_on_termination[0m[0m = true
+          [32m+[0m [0m[1m[0mencrypted[0m[0m             = false
+          [32m+[0m [0m[1m[0miops[0m[0m                  = 0
+          [32m+[0m [0m[1m[0mvolume_size[0m[0m           = 200
+          [32m+[0m [0m[1m[0mvolume_type[0m[0m           = "gp2"
+        }
+    }
+
+[1m  # module.eks.aws_launch_configuration.workers[2][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_launch_configuration" "workers" {
+      [32m+[0m [0m[1m[0marn[0m[0m                         = (known after apply)
+      [32m+[0m [0m[1m[0massociate_public_ip_address[0m[0m = false
+      [32m+[0m [0m[1m[0mebs_optimized[0m[0m               = true
+      [32m+[0m [0m[1m[0menable_monitoring[0m[0m           = true
+      [32m+[0m [0m[1m[0miam_instance_profile[0m[0m        = (known after apply)
+      [32m+[0m [0m[1m[0mid[0m[0m                          = (known after apply)
+      [32m+[0m [0m[1m[0mimage_id[0m[0m                    = "ami-0abf006a31cf87b04"
+      [32m+[0m [0m[1m[0minstance_type[0m[0m               = "m5.2xlarge"
+      [32m+[0m [0m[1m[0mkey_name[0m[0m                    = (known after apply)
+      [32m+[0m [0m[1m[0mname[0m[0m                        = (known after apply)
+      [32m+[0m [0m[1m[0mname_prefix[0m[0m                 = "viya-eks-generic"
+      [32m+[0m [0m[1m[0msecurity_groups[0m[0m             = (known after apply)
+      [32m+[0m [0m[1m[0muser_data_base64[0m[0m            = (known after apply)
+
+      [32m+[0m [0mebs_block_device {
+          [32m+[0m [0m[1m[0mdelete_on_termination[0m[0m = (known after apply)
+          [32m+[0m [0m[1m[0mdevice_name[0m[0m           = (known after apply)
+          [32m+[0m [0m[1m[0mencrypted[0m[0m             = (known after apply)
+          [32m+[0m [0m[1m[0miops[0m[0m                  = (known after apply)
+          [32m+[0m [0m[1m[0mno_device[0m[0m             = (known after apply)
+          [32m+[0m [0m[1m[0msnapshot_id[0m[0m           = (known after apply)
+          [32m+[0m [0m[1m[0mvolume_size[0m[0m           = (known after apply)
+          [32m+[0m [0m[1m[0mvolume_type[0m[0m           = (known after apply)
+        }
+
+      [32m+[0m [0mmetadata_options {
+          [32m+[0m [0m[1m[0mhttp_endpoint[0m[0m               = "enabled"
+          [32m+[0m [0m[1m[0mhttp_put_response_hop_limit[0m[0m = 1
+          [32m+[0m [0m[1m[0mhttp_tokens[0m[0m                 = "required"
+        }
+
+      [32m+[0m [0mroot_block_device {
+          [32m+[0m [0m[1m[0mdelete_on_termination[0m[0m = true
+          [32m+[0m [0m[1m[0mencrypted[0m[0m             = false
+          [32m+[0m [0m[1m[0miops[0m[0m                  = 0
+          [32m+[0m [0m[1m[0mvolume_size[0m[0m           = 200
+          [32m+[0m [0m[1m[0mvolume_type[0m[0m           = "gp2"
+        }
+    }
+
+[1m  # module.eks.aws_security_group_rule.cluster_private_access_cidrs_source[0][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_security_group_rule" "cluster_private_access_cidrs_source" {
+      [32m+[0m [0m[1m[0mcidr_blocks[0m[0m              = [
+          [32m+[0m [0m"192.168.0.0/16",
+        ]
+      [32m+[0m [0m[1m[0mdescription[0m[0m              = "Allow private K8S API ingress from custom CIDR source."
+      [32m+[0m [0m[1m[0mfrom_port[0m[0m                = 443
+      [32m+[0m [0m[1m[0mid[0m[0m                       = (known after apply)
+      [32m+[0m [0m[1m[0mprotocol[0m[0m                 = "tcp"
+      [32m+[0m [0m[1m[0msecurity_group_id[0m[0m        = (known after apply)
+      [32m+[0m [0m[1m[0mself[0m[0m                     = false
+      [32m+[0m [0m[1m[0msource_security_group_id[0m[0m = (known after apply)
+      [32m+[0m [0m[1m[0mto_port[0m[0m                  = 443
+      [32m+[0m [0m[1m[0mtype[0m[0m                     = "ingress"
+    }
+
+[1m  # module.eks.aws_security_group_rule.cluster_private_access_sg_source[0][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_security_group_rule" "cluster_private_access_sg_source" {
+      [32m+[0m [0m[1m[0mdescription[0m[0m              = "Allow private K8S API ingress from custom Security Groups source."
+      [32m+[0m [0m[1m[0mfrom_port[0m[0m                = 443
+      [32m+[0m [0m[1m[0mid[0m[0m                       = (known after apply)
+      [32m+[0m [0m[1m[0mprotocol[0m[0m                 = "tcp"
+      [32m+[0m [0m[1m[0msecurity_group_id[0m[0m        = (known after apply)
+      [32m+[0m [0m[1m[0mself[0m[0m                     = false
+      [32m+[0m [0m[1m[0msource_security_group_id[0m[0m = (known after apply)
+      [32m+[0m [0m[1m[0mto_port[0m[0m                  = 443
+      [32m+[0m [0m[1m[0mtype[0m[0m                     = "ingress"
+    }
+
+[1m  # module.eks.kubernetes_config_map.aws_auth[0][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "kubernetes_config_map" "aws_auth" {
+      [32m+[0m [0m[1m[0mdata[0m[0m = (known after apply)
+      [32m+[0m [0m[1m[0mid[0m[0m   = (known after apply)
+
+      [32m+[0m [0mmetadata {
+          [32m+[0m [0m[1m[0mgeneration[0m[0m       = (known after apply)
+          [32m+[0m [0m[1m[0mlabels[0m[0m           = {
+              [32m+[0m [0m"app.kubernetes.io/managed-by" = "Terraform"
+              [32m+[0m [0m"terraform.io/module"          = "terraform-aws-modules.eks.aws"
+            }
+          [32m+[0m [0m[1m[0mname[0m[0m             = "aws-auth"
+          [32m+[0m [0m[1m[0mnamespace[0m[0m        = "kube-system"
+          [32m+[0m [0m[1m[0mresource_version[0m[0m = (known after apply)
+          [32m+[0m [0m[1m[0mself_link[0m[0m        = (known after apply)
+          [32m+[0m [0m[1m[0muid[0m[0m              = (known after apply)
+        }
+    }
+
+[1m  # module.jump[0].data.aws_ami.ubuntu[0m will be read during apply
+  # (config refers to values not yet known)[0m[0m
+[0m [36m<=[0m[0m data "aws_ami" "ubuntu"  {
+      [32m+[0m [0m[1m[0marchitecture[0m[0m          = (known after apply)
+      [32m+[0m [0m[1m[0marn[0m[0m                   = (known after apply)
+      [32m+[0m [0m[1m[0mblock_device_mappings[0m[0m = (known after apply)
+      [32m+[0m [0m[1m[0mcreation_date[0m[0m         = (known after apply)
+      [32m+[0m [0m[1m[0mdescription[0m[0m           = (known after apply)
+      [32m+[0m [0m[1m[0mena_support[0m[0m           = (known after apply)
+      [32m+[0m [0m[1m[0mhypervisor[0m[0m            = (known after apply)
+      [32m+[0m [0m[1m[0mid[0m[0m                    = (known after apply)
+      [32m+[0m [0m[1m[0mimage_id[0m[0m              = (known after apply)
+      [32m+[0m [0m[1m[0mimage_location[0m[0m        = (known after apply)
+      [32m+[0m [0m[1m[0mimage_owner_alias[0m[0m     = (known after apply)
+      [32m+[0m [0m[1m[0mimage_type[0m[0m            = (known after apply)
+      [32m+[0m [0m[1m[0mkernel_id[0m[0m             = (known after apply)
+      [32m+[0m [0m[1m[0mmost_recent[0m[0m           = true
+      [32m+[0m [0m[1m[0mname[0m[0m                  = (known after apply)
+      [32m+[0m [0m[1m[0mowner_id[0m[0m              = (known after apply)
+      [32m+[0m [0m[1m[0mowners[0m[0m                = [
+          [32m+[0m [0m"099720109477",
+        ]
+      [32m+[0m [0m[1m[0mplatform[0m[0m              = (known after apply)
+      [32m+[0m [0m[1m[0mplatform_details[0m[0m      = (known after apply)
+      [32m+[0m [0m[1m[0mproduct_codes[0m[0m         = (known after apply)
+      [32m+[0m [0m[1m[0mpublic[0m[0m                = (known after apply)
+      [32m+[0m [0m[1m[0mramdisk_id[0m[0m            = (known after apply)
+      [32m+[0m [0m[1m[0mroot_device_name[0m[0m      = (known after apply)
+      [32m+[0m [0m[1m[0mroot_device_type[0m[0m      = (known after apply)
+      [32m+[0m [0m[1m[0mroot_snapshot_id[0m[0m      = (known after apply)
+      [32m+[0m [0m[1m[0msriov_net_support[0m[0m     = (known after apply)
+      [32m+[0m [0m[1m[0mstate[0m[0m                 = (known after apply)
+      [32m+[0m [0m[1m[0mstate_reason[0m[0m          = (known after apply)
+      [32m+[0m [0m[1m[0mtags[0m[0m                  = (known after apply)
+      [32m+[0m [0m[1m[0musage_operation[0m[0m       = (known after apply)
+      [32m+[0m [0m[1m[0mvirtualization_type[0m[0m   = (known after apply)
+
+      [32m+[0m [0mfilter {
+          [32m+[0m [0m[1m[0mname[0m[0m   = "architecture"
+          [32m+[0m [0m[1m[0mvalues[0m[0m = [
+              [32m+[0m [0m"x86_64",
+            ]
+        }
+      [32m+[0m [0mfilter {
+          [32m+[0m [0m[1m[0mname[0m[0m   = "name"
+          [32m+[0m [0m[1m[0mvalues[0m[0m = [
+              [32m+[0m [0m"ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*",
+            ]
+        }
+      [32m+[0m [0mfilter {
+          [32m+[0m [0m[1m[0mname[0m[0m   = "root-device-type"
+          [32m+[0m [0m[1m[0mvalues[0m[0m = [
+              [32m+[0m [0m"ebs",
+            ]
+        }
+      [32m+[0m [0mfilter {
+          [32m+[0m [0m[1m[0mname[0m[0m   = "virtualization-type"
+          [32m+[0m [0m[1m[0mvalues[0m[0m = [
+              [32m+[0m [0m"hvm",
+            ]
+        }
+    }
+
+[1m  # module.jump[0].aws_eip.eip[0][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_eip" "eip" {
+      [32m+[0m [0m[1m[0mallocation_id[0m[0m        = (known after apply)
+      [32m+[0m [0m[1m[0massociation_id[0m[0m       = (known after apply)
+      [32m+[0m [0m[1m[0mcarrier_ip[0m[0m           = (known after apply)
+      [32m+[0m [0m[1m[0mcustomer_owned_ip[0m[0m    = (known after apply)
+      [32m+[0m [0m[1m[0mdomain[0m[0m               = (known after apply)
+      [32m+[0m [0m[1m[0mid[0m[0m                   = (known after apply)
+      [32m+[0m [0m[1m[0minstance[0m[0m             = (known after apply)
+      [32m+[0m [0m[1m[0mnetwork_border_group[0m[0m = (known after apply)
+      [32m+[0m [0m[1m[0mnetwork_interface[0m[0m    = (known after apply)
+      [32m+[0m [0m[1m[0mprivate_dns[0m[0m          = (known after apply)
+      [32m+[0m [0m[1m[0mprivate_ip[0m[0m           = (known after apply)
+      [32m+[0m [0m[1m[0mpublic_dns[0m[0m           = (known after apply)
+      [32m+[0m [0m[1m[0mpublic_ip[0m[0m            = (known after apply)
+      [32m+[0m [0m[1m[0mpublic_ipv4_pool[0m[0m     = (known after apply)
+      [32m+[0m [0m[1m[0mtags[0m[0m                 = {
+          [32m+[0m [0m"Name"        = "viya-jump-eip"
+          [32m+[0m [0m"customer"    = "bnl"
+          [32m+[0m [0m"environment" = "development"
+          [32m+[0m [0m"owner"       = "sysadmin"
+          [32m+[0m [0m"project"     = "viya"
+        }
+      [32m+[0m [0m[1m[0mtags_all[0m[0m             = {
+          [32m+[0m [0m"Name"        = "viya-jump-eip"
+          [32m+[0m [0m"customer"    = "bnl"
+          [32m+[0m [0m"environment" = "development"
+          [32m+[0m [0m"owner"       = "sysadmin"
+          [32m+[0m [0m"project"     = "viya"
+        }
+      [32m+[0m [0m[1m[0mvpc[0m[0m                  = true
+    }
+
+[1m  # module.jump[0].aws_instance.vm[0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_instance" "vm" {
+      [32m+[0m [0m[1m[0mami[0m[0m                                  = (known after apply)
+      [32m+[0m [0m[1m[0marn[0m[0m                                  = (known after apply)
+      [32m+[0m [0m[1m[0massociate_public_ip_address[0m[0m          = true
+      [32m+[0m [0m[1m[0mavailability_zone[0m[0m                    = (known after apply)
+      [32m+[0m [0m[1m[0mcpu_core_count[0m[0m                       = (known after apply)
+      [32m+[0m [0m[1m[0mcpu_threads_per_core[0m[0m                 = (known after apply)
+      [32m+[0m [0m[1m[0mget_password_data[0m[0m                    = false
+      [32m+[0m [0m[1m[0mhost_id[0m[0m                              = (known after apply)
+      [32m+[0m [0m[1m[0mid[0m[0m                                   = (known after apply)
+      [32m+[0m [0m[1m[0minstance_initiated_shutdown_behavior[0m[0m = (known after apply)
+      [32m+[0m [0m[1m[0minstance_state[0m[0m                       = (known after apply)
+      [32m+[0m [0m[1m[0minstance_type[0m[0m                        = "t3.medium"
+      [32m+[0m [0m[1m[0mipv6_address_count[0m[0m                   = (known after apply)
+      [32m+[0m [0m[1m[0mipv6_addresses[0m[0m                       = (known after apply)
+      [32m+[0m [0m[1m[0mkey_name[0m[0m                             = "viya-jump-admin"
+      [32m+[0m [0m[1m[0moutpost_arn[0m[0m                          = (known after apply)
+      [32m+[0m [0m[1m[0mpassword_data[0m[0m                        = (known after apply)
+      [32m+[0m [0m[1m[0mplacement_group[0m[0m                      = (known after apply)
+      [32m+[0m [0m[1m[0mprimary_network_interface_id[0m[0m         = (known after apply)
+      [32m+[0m [0m[1m[0mprivate_dns[0m[0m                          = (known after apply)
+      [32m+[0m [0m[1m[0mprivate_ip[0m[0m                           = (known after apply)
+      [32m+[0m [0m[1m[0mpublic_dns[0m[0m                           = (known after apply)
+      [32m+[0m [0m[1m[0mpublic_ip[0m[0m                            = (known after apply)
+      [32m+[0m [0m[1m[0msecondary_private_ips[0m[0m                = (known after apply)
+      [32m+[0m [0m[1m[0msecurity_groups[0m[0m                      = (known after apply)
+      [32m+[0m [0m[1m[0msource_dest_check[0m[0m                    = true
+      [32m+[0m [0m[1m[0msubnet_id[0m[0m                            = (known after apply)
+      [32m+[0m [0m[1m[0mtags[0m[0m                                 = {
+          [32m+[0m [0m"Name"        = "viya-jump-vm"
+          [32m+[0m [0m"customer"    = "bnl"
+          [32m+[0m [0m"environment" = "development"
+          [32m+[0m [0m"owner"       = "sysadmin"
+          [32m+[0m [0m"project"     = "viya"
+        }
+      [32m+[0m [0m[1m[0mtags_all[0m[0m                             = {
+          [32m+[0m [0m"Name"        = "viya-jump-vm"
+          [32m+[0m [0m"customer"    = "bnl"
+          [32m+[0m [0m"environment" = "development"
+          [32m+[0m [0m"owner"       = "sysadmin"
+          [32m+[0m [0m"project"     = "viya"
+        }
+      [32m+[0m [0m[1m[0mtenancy[0m[0m                              = (known after apply)
+      [32m+[0m [0m[1m[0muser_data[0m[0m                            = (known after apply)
+      [32m+[0m [0m[1m[0mvpc_security_group_ids[0m[0m               = (known after apply)
+
+      [32m+[0m [0mcapacity_reservation_specification {
+          [32m+[0m [0m[1m[0mcapacity_reservation_preference[0m[0m = (known after apply)
+
+          [32m+[0m [0mcapacity_reservation_target {
+              [32m+[0m [0m[1m[0mcapacity_reservation_id[0m[0m = (known after apply)
+            }
+        }
+
+      [32m+[0m [0mebs_block_device {
+          [32m+[0m [0m[1m[0mdelete_on_termination[0m[0m = (known after apply)
+          [32m+[0m [0m[1m[0mdevice_name[0m[0m           = (known after apply)
+          [32m+[0m [0m[1m[0mencrypted[0m[0m             = (known after apply)
+          [32m+[0m [0m[1m[0miops[0m[0m                  = (known after apply)
+          [32m+[0m [0m[1m[0mkms_key_id[0m[0m            = (known after apply)
+          [32m+[0m [0m[1m[0msnapshot_id[0m[0m           = (known after apply)
+          [32m+[0m [0m[1m[0mtags[0m[0m                  = (known after apply)
+          [32m+[0m [0m[1m[0mthroughput[0m[0m            = (known after apply)
+          [32m+[0m [0m[1m[0mvolume_id[0m[0m             = (known after apply)
+          [32m+[0m [0m[1m[0mvolume_size[0m[0m           = (known after apply)
+          [32m+[0m [0m[1m[0mvolume_type[0m[0m           = (known after apply)
+        }
+
+      [32m+[0m [0menclave_options {
+          [32m+[0m [0m[1m[0menabled[0m[0m = (known after apply)
+        }
+
+      [32m+[0m [0mephemeral_block_device {
+          [32m+[0m [0m[1m[0mdevice_name[0m[0m  = (known after apply)
+          [32m+[0m [0m[1m[0mno_device[0m[0m    = (known after apply)
+          [32m+[0m [0m[1m[0mvirtual_name[0m[0m = (known after apply)
+        }
+
+      [32m+[0m [0mmetadata_options {
+          [32m+[0m [0m[1m[0mhttp_endpoint[0m[0m               = (known after apply)
+          [32m+[0m [0m[1m[0mhttp_put_response_hop_limit[0m[0m = (known after apply)
+          [32m+[0m [0m[1m[0mhttp_tokens[0m[0m                 = (known after apply)
+        }
+
+      [32m+[0m [0mnetwork_interface {
+          [32m+[0m [0m[1m[0mdelete_on_termination[0m[0m = (known after apply)
+          [32m+[0m [0m[1m[0mdevice_index[0m[0m          = (known after apply)
+          [32m+[0m [0m[1m[0mnetwork_interface_id[0m[0m  = (known after apply)
+        }
+
+      [32m+[0m [0mroot_block_device {
+          [32m+[0m [0m[1m[0mdelete_on_termination[0m[0m = true
+          [32m+[0m [0m[1m[0mdevice_name[0m[0m           = (known after apply)
+          [32m+[0m [0m[1m[0mencrypted[0m[0m             = (known after apply)
+          [32m+[0m [0m[1m[0miops[0m[0m                  = (known after apply)
+          [32m+[0m [0m[1m[0mkms_key_id[0m[0m            = (known after apply)
+          [32m+[0m [0m[1m[0mthroughput[0m[0m            = (known after apply)
+          [32m+[0m [0m[1m[0mvolume_id[0m[0m             = (known after apply)
+          [32m+[0m [0m[1m[0mvolume_size[0m[0m           = 64
+          [32m+[0m [0m[1m[0mvolume_type[0m[0m           = "standard"
+        }
+    }
+
+[1m  # module.jump[0].aws_key_pair.admin[0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_key_pair" "admin" {
+      [32m+[0m [0m[1m[0marn[0m[0m         = (known after apply)
+      [32m+[0m [0m[1m[0mfingerprint[0m[0m = (known after apply)
+      [32m+[0m [0m[1m[0mid[0m[0m          = (known after apply)
+      [32m+[0m [0m[1m[0mkey_name[0m[0m    = "viya-jump-admin"
+      [32m+[0m [0m[1m[0mkey_pair_id[0m[0m = (known after apply)
+      [32m+[0m [0m[1m[0mpublic_key[0m[0m  = <<-EOT
+            -----BEGIN RSA PRIVATE KEY-----
+            MIIEogIBAAKCAQEAj9gM3G7W7YMarTMTDWFHEVFreXjHY7UsbFs9aROt6ObFD9Zs
+            MY90Oy41Tg6JPVzq0rTzQ7IQDbzRlHjJEQaPl7cjhKh9W2PRYatuVpRg6DaAO/fy
+            C/YrZ0XjNeDW7+O0YvAWAG69eBHZHBDDA+AqtedWfTIVH0lFmZlCWO/Z6HxceEia
+            7R6PPQk+hlVZTWzJB3gq1Kb+R7grfBnHrm3ZpYE3bg6uoO1Pkuq21w2P4LMzPkSq
+            m2yD4Mp2jLL/PB0PAwIPJWwMhGyLMNLwCKZB7WhdmNbVVsJwzhv/djhx/cudipDE
+            L+dJH3S5dFl7ZnSkKXr4ar25d3KYv4kS8xt+fwIDAQABAoIBADqGlE0ICAjhQ/Re
+            iIz0HH9OWmU1ICNQbr+zq9vZ9vOBGYLlImZT0N3XYjbdMTe3W4/ZsfTEOUXtonQ/
+            ZMe5nKkFCb2K9F4/0cxkfONbQcaZjjlYG7KEOYquY9DjJ3C5fAaZWspYRFzbHjQO
+            Gdq01YvnkUglHXT6Ugg51EXtaQLvIkQ2VElV82UYyPPhaEgxKzIcGwjCNhMJH7fT
+            4IfKQ0wbiRC+s5t3wwKvv1VLgMW6OSMaO6kKUHEa9rXgQn0F/0vGIom17vTli1ZL
+            t3zFvLu09Tjr8OFIi2JFa8gi87vHIVTrWXqLHLQjmef6HN2+06BzEAdZjz0ChDTo
+            9/gu1RkCgYEAx8rXZRwagcSrxXzobBouGHEoyuJM1Hxrz/OC3+ACAT9FE8A+V3/O
+            JygrVa9bnNZKxzV5b2Lrr/5kBiqy3EfmHhMBa+j9SWX8CVexzuOP6R7b37WpsmSk
+            2SEx05dLVVH5OV5ybIpXPJTvtIWbCkDJCwxaliIpRGbh/ElN+rmcVSsCgYEAuE/F
+            5uSlk2D+28DezDdjVOEpvTLYv6+ZQEmalD7zrvC+j9YtTyZP5UGoygMtDqZXRFyO
+            OMeP4HUGtpMH9SCpJZbitabImSMZvo3mCjRPysL+HZNJxHRab0ckAT+Wbe7pgix6
+            EAvmQBp/M2w5PDOB+dZQwbqNdl/gt20DOGUOef0CgYB/TEnTfYWSG1qK2VxJzKCE
+            KE2if3AOjzwuYmyH8nW0j7iWrg3KuH8Eyf5aeQG5O3yn0vWNuAyNtVvL5hbSbek8
+            TkXAmNIRmy5sUXjUZoACPAxCTMBUDvZN9m2F8McqFLHkEL59U+PjkM3uSpaPgNnX
+            9UYelKOQlrD0i0xpLSxjwwKBgGdb1Q92iaPscP+rWUYMiZe/7Tg8m3BjeP2kSRt5
+            cg5Y04S2BxKr2YInIBCpV0sv3SBpBxiwUO7+sZURPxUoC7MYumpD7ZpzJKzHxolS
+            bKy4TOko/+U7mrtsmbRZhHKB2FE3v/vfsG+ibFLaDf7Eo88HcKIzi8EmY055w6SM
+            h2HBAoGAJCceJWyDXtmJRFnm+1w6C7VSXRH2Tn8rf8eybpvmWlF44rM2YM9vK3xN
+            y9nrcMKbW95eh7waJ9PKm+oRTxD3WRGEIijrYkdxFbweiC5yzlB1pZPJvS1dhsRg
+            BNSaScfVenvmNzlKQ9Kz1xwPmnYDEBts3rp7ZY8VQWGzbacKooM=
+            -----END RSA PRIVATE KEY-----
+        EOT
+      [32m+[0m [0m[1m[0mtags_all[0m[0m    = (known after apply)
+    }
+
+[1m  # module.kubeconfig.data.kubernetes_secret.sa_secret[0][0m will be read during apply
+  # (config refers to values not yet known)[0m[0m
+[0m [36m<=[0m[0m data "kubernetes_secret" "sa_secret"  {
+      [32m+[0m [0m[1m[0mdata[0m[0m = (sensitive value)
+      [32m+[0m [0m[1m[0mid[0m[0m   = (known after apply)
+      [32m+[0m [0m[1m[0mtype[0m[0m = (known after apply)
+
+      [32m+[0m [0mmetadata {
+          [32m+[0m [0m[1m[0mgeneration[0m[0m       = (known after apply)
+          [32m+[0m [0m[1m[0mname[0m[0m             = (known after apply)
+          [32m+[0m [0m[1m[0mnamespace[0m[0m        = "kube-system"
+          [32m+[0m [0m[1m[0mresource_version[0m[0m = (known after apply)
+          [32m+[0m [0m[1m[0mself_link[0m[0m        = (known after apply)
+          [32m+[0m [0m[1m[0muid[0m[0m              = (known after apply)
+        }
+    }
+
+[1m  # module.kubeconfig.data.template_file.kubeconfig_sa[0][0m will be read during apply
+  # (config refers to values not yet known)[0m[0m
+[0m [36m<=[0m[0m data "template_file" "kubeconfig_sa"  {
+      [32m+[0m [0m[1m[0mid[0m[0m       = (known after apply)
+      [32m+[0m [0m[1m[0mrendered[0m[0m = (known after apply)
+      [32m+[0m [0m[1m[0mtemplate[0m[0m = <<-EOT
+            apiVersion: v1
+            kind: Config
+            clusters:
+              - name: ${cluster_name}
+                cluster:
+                  server: '${endpoint}'
+                  certificate-authority-data: >-
+                    ${ca_crt}
+            users:
+              - name: ${name}
+                user:
+                  token: >-
+                    ${token}
+            contexts:
+              - name: ${cluster_name}    
+                context:
+                  user: ${name}
+                  cluster: ${cluster_name}
+                  namespace: ${namespace}
+            current-context: ${cluster_name}
+        EOT
+      [32m+[0m [0m[1m[0mvars[0m[0m     = {
+          [32m+[0m [0m"ca_crt"       = (known after apply)
+          [32m+[0m [0m"cluster_name" = "viya-eks"
+          [32m+[0m [0m"endpoint"     = (known after apply)
+          [32m+[0m [0m"name"         = "viya-cluster-admin-sa"
+          [32m+[0m [0m"namespace"    = "kube-system"
+          [32m+[0m [0m"token"        = (known after apply)
+        }
+    }
+
+[1m  # module.kubeconfig.kubernetes_cluster_role_binding.kubernetes_crb[0][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "kubernetes_cluster_role_binding" "kubernetes_crb" {
+      [32m+[0m [0m[1m[0mid[0m[0m = (known after apply)
+
+      [32m+[0m [0mmetadata {
+          [32m+[0m [0m[1m[0mgeneration[0m[0m       = (known after apply)
+          [32m+[0m [0m[1m[0mname[0m[0m             = "viya-cluster-admin-crb"
+          [32m+[0m [0m[1m[0mresource_version[0m[0m = (known after apply)
+          [32m+[0m [0m[1m[0mself_link[0m[0m        = (known after apply)
+          [32m+[0m [0m[1m[0muid[0m[0m              = (known after apply)
+        }
+
+      [32m+[0m [0mrole_ref {
+          [32m+[0m [0m[1m[0mapi_group[0m[0m = "rbac.authorization.k8s.io"
+          [32m+[0m [0m[1m[0mkind[0m[0m      = "ClusterRole"
+          [32m+[0m [0m[1m[0mname[0m[0m      = "cluster-admin"
+        }
+
+      [32m+[0m [0msubject {
+          [32m+[0m [0m[1m[0mapi_group[0m[0m = (known after apply)
+          [32m+[0m [0m[1m[0mkind[0m[0m      = "ServiceAccount"
+          [32m+[0m [0m[1m[0mname[0m[0m      = "viya-cluster-admin-sa"
+          [32m+[0m [0m[1m[0mnamespace[0m[0m = "kube-system"
+        }
+    }
+
+[1m  # module.kubeconfig.kubernetes_service_account.kubernetes_sa[0][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "kubernetes_service_account" "kubernetes_sa" {
+      [32m+[0m [0m[1m[0mautomount_service_account_token[0m[0m = true
+      [32m+[0m [0m[1m[0mdefault_secret_name[0m[0m             = (known after apply)
+      [32m+[0m [0m[1m[0mid[0m[0m                              = (known after apply)
+
+      [32m+[0m [0mmetadata {
+          [32m+[0m [0m[1m[0mgeneration[0m[0m       = (known after apply)
+          [32m+[0m [0m[1m[0mname[0m[0m             = "viya-cluster-admin-sa"
+          [32m+[0m [0m[1m[0mnamespace[0m[0m        = "kube-system"
+          [32m+[0m [0m[1m[0mresource_version[0m[0m = (known after apply)
+          [32m+[0m [0m[1m[0mself_link[0m[0m        = (known after apply)
+          [32m+[0m [0m[1m[0muid[0m[0m              = (known after apply)
+        }
+    }
+
+[1m  # module.kubeconfig.local_file.kubeconfig[0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "local_file" "kubeconfig" {
+      [32m+[0m [0m[1m[0mcontent[0m[0m              = (known after apply)
+      [32m+[0m [0m[1m[0mdirectory_permission[0m[0m = "0755"
+      [32m+[0m [0m[1m[0mfile_permission[0m[0m      = "0644"
+      [32m+[0m [0m[1m[0mfilename[0m[0m             = "viya-eks-kubeconfig.conf"
+      [32m+[0m [0m[1m[0mid[0m[0m                   = (known after apply)
+    }
+
+[1m  # module.nfs[0].aws_ebs_volume.raid_disk[0][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_ebs_volume" "raid_disk" {
+      [32m+[0m [0m[1m[0marn[0m[0m               = (known after apply)
+      [32m+[0m [0m[1m[0mavailability_zone[0m[0m = "us-east-2a"
+      [32m+[0m [0m[1m[0mencrypted[0m[0m         = (known after apply)
+      [32m+[0m [0m[1m[0mid[0m[0m                = (known after apply)
+      [32m+[0m [0m[1m[0miops[0m[0m              = 0
+      [32m+[0m [0m[1m[0mkms_key_id[0m[0m        = (known after apply)
+      [32m+[0m [0m[1m[0msize[0m[0m              = 128
+      [32m+[0m [0m[1m[0msnapshot_id[0m[0m       = (known after apply)
+      [32m+[0m [0m[1m[0mtags[0m[0m              = {
+          [32m+[0m [0m"Name"        = "viya-nfs-server-vm"
+          [32m+[0m [0m"customer"    = "bnl"
+          [32m+[0m [0m"environment" = "development"
+          [32m+[0m [0m"owner"       = "sysadmin"
+          [32m+[0m [0m"project"     = "viya"
+        }
+      [32m+[0m [0m[1m[0mtags_all[0m[0m          = {
+          [32m+[0m [0m"Name"        = "viya-nfs-server-vm"
+          [32m+[0m [0m"customer"    = "bnl"
+          [32m+[0m [0m"environment" = "development"
+          [32m+[0m [0m"owner"       = "sysadmin"
+          [32m+[0m [0m"project"     = "viya"
+        }
+      [32m+[0m [0m[1m[0mthroughput[0m[0m        = (known after apply)
+      [32m+[0m [0m[1m[0mtype[0m[0m              = "gp2"
+    }
+
+[1m  # module.nfs[0].aws_ebs_volume.raid_disk[1][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_ebs_volume" "raid_disk" {
+      [32m+[0m [0m[1m[0marn[0m[0m               = (known after apply)
+      [32m+[0m [0m[1m[0mavailability_zone[0m[0m = "us-east-2a"
+      [32m+[0m [0m[1m[0mencrypted[0m[0m         = (known after apply)
+      [32m+[0m [0m[1m[0mid[0m[0m                = (known after apply)
+      [32m+[0m [0m[1m[0miops[0m[0m              = 0
+      [32m+[0m [0m[1m[0mkms_key_id[0m[0m        = (known after apply)
+      [32m+[0m [0m[1m[0msize[0m[0m              = 128
+      [32m+[0m [0m[1m[0msnapshot_id[0m[0m       = (known after apply)
+      [32m+[0m [0m[1m[0mtags[0m[0m              = {
+          [32m+[0m [0m"Name"        = "viya-nfs-server-vm"
+          [32m+[0m [0m"customer"    = "bnl"
+          [32m+[0m [0m"environment" = "development"
+          [32m+[0m [0m"owner"       = "sysadmin"
+          [32m+[0m [0m"project"     = "viya"
+        }
+      [32m+[0m [0m[1m[0mtags_all[0m[0m          = {
+          [32m+[0m [0m"Name"        = "viya-nfs-server-vm"
+          [32m+[0m [0m"customer"    = "bnl"
+          [32m+[0m [0m"environment" = "development"
+          [32m+[0m [0m"owner"       = "sysadmin"
+          [32m+[0m [0m"project"     = "viya"
+        }
+      [32m+[0m [0m[1m[0mthroughput[0m[0m        = (known after apply)
+      [32m+[0m [0m[1m[0mtype[0m[0m              = "gp2"
+    }
+
+[1m  # module.nfs[0].aws_ebs_volume.raid_disk[2][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_ebs_volume" "raid_disk" {
+      [32m+[0m [0m[1m[0marn[0m[0m               = (known after apply)
+      [32m+[0m [0m[1m[0mavailability_zone[0m[0m = "us-east-2a"
+      [32m+[0m [0m[1m[0mencrypted[0m[0m         = (known after apply)
+      [32m+[0m [0m[1m[0mid[0m[0m                = (known after apply)
+      [32m+[0m [0m[1m[0miops[0m[0m              = 0
+      [32m+[0m [0m[1m[0mkms_key_id[0m[0m        = (known after apply)
+      [32m+[0m [0m[1m[0msize[0m[0m              = 128
+      [32m+[0m [0m[1m[0msnapshot_id[0m[0m       = (known after apply)
+      [32m+[0m [0m[1m[0mtags[0m[0m              = {
+          [32m+[0m [0m"Name"        = "viya-nfs-server-vm"
+          [32m+[0m [0m"customer"    = "bnl"
+          [32m+[0m [0m"environment" = "development"
+          [32m+[0m [0m"owner"       = "sysadmin"
+          [32m+[0m [0m"project"     = "viya"
+        }
+      [32m+[0m [0m[1m[0mtags_all[0m[0m          = {
+          [32m+[0m [0m"Name"        = "viya-nfs-server-vm"
+          [32m+[0m [0m"customer"    = "bnl"
+          [32m+[0m [0m"environment" = "development"
+          [32m+[0m [0m"owner"       = "sysadmin"
+          [32m+[0m [0m"project"     = "viya"
+        }
+      [32m+[0m [0m[1m[0mthroughput[0m[0m        = (known after apply)
+      [32m+[0m [0m[1m[0mtype[0m[0m              = "gp2"
+    }
+
+[1m  # module.nfs[0].aws_ebs_volume.raid_disk[3][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_ebs_volume" "raid_disk" {
+      [32m+[0m [0m[1m[0marn[0m[0m               = (known after apply)
+      [32m+[0m [0m[1m[0mavailability_zone[0m[0m = "us-east-2a"
+      [32m+[0m [0m[1m[0mencrypted[0m[0m         = (known after apply)
+      [32m+[0m [0m[1m[0mid[0m[0m                = (known after apply)
+      [32m+[0m [0m[1m[0miops[0m[0m              = 0
+      [32m+[0m [0m[1m[0mkms_key_id[0m[0m        = (known after apply)
+      [32m+[0m [0m[1m[0msize[0m[0m              = 128
+      [32m+[0m [0m[1m[0msnapshot_id[0m[0m       = (known after apply)
+      [32m+[0m [0m[1m[0mtags[0m[0m              = {
+          [32m+[0m [0m"Name"        = "viya-nfs-server-vm"
+          [32m+[0m [0m"customer"    = "bnl"
+          [32m+[0m [0m"environment" = "development"
+          [32m+[0m [0m"owner"       = "sysadmin"
+          [32m+[0m [0m"project"     = "viya"
+        }
+      [32m+[0m [0m[1m[0mtags_all[0m[0m          = {
+          [32m+[0m [0m"Name"        = "viya-nfs-server-vm"
+          [32m+[0m [0m"customer"    = "bnl"
+          [32m+[0m [0m"environment" = "development"
+          [32m+[0m [0m"owner"       = "sysadmin"
+          [32m+[0m [0m"project"     = "viya"
+        }
+      [32m+[0m [0m[1m[0mthroughput[0m[0m        = (known after apply)
+      [32m+[0m [0m[1m[0mtype[0m[0m              = "gp2"
+    }
+
+[1m  # module.nfs[0].aws_instance.vm[0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_instance" "vm" {
+      [32m+[0m [0m[1m[0mami[0m[0m                                  = "ami-0629230e074c580f2"
+      [32m+[0m [0m[1m[0marn[0m[0m                                  = (known after apply)
+      [32m+[0m [0m[1m[0massociate_public_ip_address[0m[0m          = false
+      [32m+[0m [0m[1m[0mavailability_zone[0m[0m                    = "us-east-2a"
+      [32m+[0m [0m[1m[0mcpu_core_count[0m[0m                       = (known after apply)
+      [32m+[0m [0m[1m[0mcpu_threads_per_core[0m[0m                 = (known after apply)
+      [32m+[0m [0m[1m[0mget_password_data[0m[0m                    = false
+      [32m+[0m [0m[1m[0mhost_id[0m[0m                              = (known after apply)
+      [32m+[0m [0m[1m[0mid[0m[0m                                   = (known after apply)
+      [32m+[0m [0m[1m[0minstance_initiated_shutdown_behavior[0m[0m = (known after apply)
+      [32m+[0m [0m[1m[0minstance_state[0m[0m                       = (known after apply)
+      [32m+[0m [0m[1m[0minstance_type[0m[0m                        = "m5.xlarge"
+      [32m+[0m [0m[1m[0mipv6_address_count[0m[0m                   = (known after apply)
+      [32m+[0m [0m[1m[0mipv6_addresses[0m[0m                       = (known after apply)
+      [32m+[0m [0m[1m[0mkey_name[0m[0m                             = "viya-nfs-server-admin"
+      [32m+[0m [0m[1m[0moutpost_arn[0m[0m                          = (known after apply)
+      [32m+[0m [0m[1m[0mpassword_data[0m[0m                        = (known after apply)
+      [32m+[0m [0m[1m[0mplacement_group[0m[0m                      = (known after apply)
+      [32m+[0m [0m[1m[0mprimary_network_interface_id[0m[0m         = (known after apply)
+      [32m+[0m [0m[1m[0mprivate_dns[0m[0m                          = (known after apply)
+      [32m+[0m [0m[1m[0mprivate_ip[0m[0m                           = (known after apply)
+      [32m+[0m [0m[1m[0mpublic_dns[0m[0m                           = (known after apply)
+      [32m+[0m [0m[1m[0mpublic_ip[0m[0m                            = (known after apply)
+      [32m+[0m [0m[1m[0msecondary_private_ips[0m[0m                = (known after apply)
+      [32m+[0m [0m[1m[0msecurity_groups[0m[0m                      = (known after apply)
+      [32m+[0m [0m[1m[0msource_dest_check[0m[0m                    = true
+      [32m+[0m [0m[1m[0msubnet_id[0m[0m                            = (known after apply)
+      [32m+[0m [0m[1m[0mtags[0m[0m                                 = {
+          [32m+[0m [0m"Name"        = "viya-nfs-server-vm"
+          [32m+[0m [0m"customer"    = "bnl"
+          [32m+[0m [0m"environment" = "development"
+          [32m+[0m [0m"owner"       = "sysadmin"
+          [32m+[0m [0m"project"     = "viya"
+        }
+      [32m+[0m [0m[1m[0mtags_all[0m[0m                             = {
+          [32m+[0m [0m"Name"        = "viya-nfs-server-vm"
+          [32m+[0m [0m"customer"    = "bnl"
+          [32m+[0m [0m"environment" = "development"
+          [32m+[0m [0m"owner"       = "sysadmin"
+          [32m+[0m [0m"project"     = "viya"
+        }
+      [32m+[0m [0m[1m[0mtenancy[0m[0m                              = (known after apply)
+      [32m+[0m [0m[1m[0muser_data[0m[0m                            = "c910ab22356d76ce4a4b986434650f8434d8f666"
+      [32m+[0m [0m[1m[0mvpc_security_group_ids[0m[0m               = (known after apply)
+
+      [32m+[0m [0mcapacity_reservation_specification {
+          [32m+[0m [0m[1m[0mcapacity_reservation_preference[0m[0m = (known after apply)
+
+          [32m+[0m [0mcapacity_reservation_target {
+              [32m+[0m [0m[1m[0mcapacity_reservation_id[0m[0m = (known after apply)
+            }
+        }
+
+      [32m+[0m [0mebs_block_device {
+          [32m+[0m [0m[1m[0mdelete_on_termination[0m[0m = (known after apply)
+          [32m+[0m [0m[1m[0mdevice_name[0m[0m           = (known after apply)
+          [32m+[0m [0m[1m[0mencrypted[0m[0m             = (known after apply)
+          [32m+[0m [0m[1m[0miops[0m[0m                  = (known after apply)
+          [32m+[0m [0m[1m[0mkms_key_id[0m[0m            = (known after apply)
+          [32m+[0m [0m[1m[0msnapshot_id[0m[0m           = (known after apply)
+          [32m+[0m [0m[1m[0mtags[0m[0m                  = (known after apply)
+          [32m+[0m [0m[1m[0mthroughput[0m[0m            = (known after apply)
+          [32m+[0m [0m[1m[0mvolume_id[0m[0m             = (known after apply)
+          [32m+[0m [0m[1m[0mvolume_size[0m[0m           = (known after apply)
+          [32m+[0m [0m[1m[0mvolume_type[0m[0m           = (known after apply)
+        }
+
+      [32m+[0m [0menclave_options {
+          [32m+[0m [0m[1m[0menabled[0m[0m = (known after apply)
+        }
+
+      [32m+[0m [0mephemeral_block_device {
+          [32m+[0m [0m[1m[0mdevice_name[0m[0m  = (known after apply)
+          [32m+[0m [0m[1m[0mno_device[0m[0m    = (known after apply)
+          [32m+[0m [0m[1m[0mvirtual_name[0m[0m = (known after apply)
+        }
+
+      [32m+[0m [0mmetadata_options {
+          [32m+[0m [0m[1m[0mhttp_endpoint[0m[0m               = (known after apply)
+          [32m+[0m [0m[1m[0mhttp_put_response_hop_limit[0m[0m = (known after apply)
+          [32m+[0m [0m[1m[0mhttp_tokens[0m[0m                 = (known after apply)
+        }
+
+      [32m+[0m [0mnetwork_interface {
+          [32m+[0m [0m[1m[0mdelete_on_termination[0m[0m = (known after apply)
+          [32m+[0m [0m[1m[0mdevice_index[0m[0m          = (known after apply)
+          [32m+[0m [0m[1m[0mnetwork_interface_id[0m[0m  = (known after apply)
+        }
+
+      [32m+[0m [0mroot_block_device {
+          [32m+[0m [0m[1m[0mdelete_on_termination[0m[0m = true
+          [32m+[0m [0m[1m[0mdevice_name[0m[0m           = (known after apply)
+          [32m+[0m [0m[1m[0mencrypted[0m[0m             = (known after apply)
+          [32m+[0m [0m[1m[0miops[0m[0m                  = (known after apply)
+          [32m+[0m [0m[1m[0mkms_key_id[0m[0m            = (known after apply)
+          [32m+[0m [0m[1m[0mthroughput[0m[0m            = (known after apply)
+          [32m+[0m [0m[1m[0mvolume_id[0m[0m             = (known after apply)
+          [32m+[0m [0m[1m[0mvolume_size[0m[0m           = 64
+          [32m+[0m [0m[1m[0mvolume_type[0m[0m           = "standard"
+        }
+    }
+
+[1m  # module.nfs[0].aws_key_pair.admin[0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_key_pair" "admin" {
+      [32m+[0m [0m[1m[0marn[0m[0m         = (known after apply)
+      [32m+[0m [0m[1m[0mfingerprint[0m[0m = (known after apply)
+      [32m+[0m [0m[1m[0mid[0m[0m          = (known after apply)
+      [32m+[0m [0m[1m[0mkey_name[0m[0m    = "viya-nfs-server-admin"
+      [32m+[0m [0m[1m[0mkey_pair_id[0m[0m = (known after apply)
+      [32m+[0m [0m[1m[0mpublic_key[0m[0m  = <<-EOT
+            -----BEGIN RSA PRIVATE KEY-----
+            MIIEogIBAAKCAQEAj9gM3G7W7YMarTMTDWFHEVFreXjHY7UsbFs9aROt6ObFD9Zs
+            MY90Oy41Tg6JPVzq0rTzQ7IQDbzRlHjJEQaPl7cjhKh9W2PRYatuVpRg6DaAO/fy
+            C/YrZ0XjNeDW7+O0YvAWAG69eBHZHBDDA+AqtedWfTIVH0lFmZlCWO/Z6HxceEia
+            7R6PPQk+hlVZTWzJB3gq1Kb+R7grfBnHrm3ZpYE3bg6uoO1Pkuq21w2P4LMzPkSq
+            m2yD4Mp2jLL/PB0PAwIPJWwMhGyLMNLwCKZB7WhdmNbVVsJwzhv/djhx/cudipDE
+            L+dJH3S5dFl7ZnSkKXr4ar25d3KYv4kS8xt+fwIDAQABAoIBADqGlE0ICAjhQ/Re
+            iIz0HH9OWmU1ICNQbr+zq9vZ9vOBGYLlImZT0N3XYjbdMTe3W4/ZsfTEOUXtonQ/
+            ZMe5nKkFCb2K9F4/0cxkfONbQcaZjjlYG7KEOYquY9DjJ3C5fAaZWspYRFzbHjQO
+            Gdq01YvnkUglHXT6Ugg51EXtaQLvIkQ2VElV82UYyPPhaEgxKzIcGwjCNhMJH7fT
+            4IfKQ0wbiRC+s5t3wwKvv1VLgMW6OSMaO6kKUHEa9rXgQn0F/0vGIom17vTli1ZL
+            t3zFvLu09Tjr8OFIi2JFa8gi87vHIVTrWXqLHLQjmef6HN2+06BzEAdZjz0ChDTo
+            9/gu1RkCgYEAx8rXZRwagcSrxXzobBouGHEoyuJM1Hxrz/OC3+ACAT9FE8A+V3/O
+            JygrVa9bnNZKxzV5b2Lrr/5kBiqy3EfmHhMBa+j9SWX8CVexzuOP6R7b37WpsmSk
+            2SEx05dLVVH5OV5ybIpXPJTvtIWbCkDJCwxaliIpRGbh/ElN+rmcVSsCgYEAuE/F
+            5uSlk2D+28DezDdjVOEpvTLYv6+ZQEmalD7zrvC+j9YtTyZP5UGoygMtDqZXRFyO
+            OMeP4HUGtpMH9SCpJZbitabImSMZvo3mCjRPysL+HZNJxHRab0ckAT+Wbe7pgix6
+            EAvmQBp/M2w5PDOB+dZQwbqNdl/gt20DOGUOef0CgYB/TEnTfYWSG1qK2VxJzKCE
+            KE2if3AOjzwuYmyH8nW0j7iWrg3KuH8Eyf5aeQG5O3yn0vWNuAyNtVvL5hbSbek8
+            TkXAmNIRmy5sUXjUZoACPAxCTMBUDvZN9m2F8McqFLHkEL59U+PjkM3uSpaPgNnX
+            9UYelKOQlrD0i0xpLSxjwwKBgGdb1Q92iaPscP+rWUYMiZe/7Tg8m3BjeP2kSRt5
+            cg5Y04S2BxKr2YInIBCpV0sv3SBpBxiwUO7+sZURPxUoC7MYumpD7ZpzJKzHxolS
+            bKy4TOko/+U7mrtsmbRZhHKB2FE3v/vfsG+ibFLaDf7Eo88HcKIzi8EmY055w6SM
+            h2HBAoGAJCceJWyDXtmJRFnm+1w6C7VSXRH2Tn8rf8eybpvmWlF44rM2YM9vK3xN
+            y9nrcMKbW95eh7waJ9PKm+oRTxD3WRGEIijrYkdxFbweiC5yzlB1pZPJvS1dhsRg
+            BNSaScfVenvmNzlKQ9Kz1xwPmnYDEBts3rp7ZY8VQWGzbacKooM=
+            -----END RSA PRIVATE KEY-----
+        EOT
+      [32m+[0m [0m[1m[0mtags_all[0m[0m    = (known after apply)
+    }
+
+[1m  # module.nfs[0].aws_volume_attachment.data-volume-attachment[0][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_volume_attachment" "data-volume-attachment" {
+      [32m+[0m [0m[1m[0mdevice_name[0m[0m = "/dev/sdd"
+      [32m+[0m [0m[1m[0mid[0m[0m          = (known after apply)
+      [32m+[0m [0m[1m[0minstance_id[0m[0m = (known after apply)
+      [32m+[0m [0m[1m[0mvolume_id[0m[0m   = (known after apply)
+    }
+
+[1m  # module.nfs[0].aws_volume_attachment.data-volume-attachment[1][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_volume_attachment" "data-volume-attachment" {
+      [32m+[0m [0m[1m[0mdevice_name[0m[0m = "/dev/sde"
+      [32m+[0m [0m[1m[0mid[0m[0m          = (known after apply)
+      [32m+[0m [0m[1m[0minstance_id[0m[0m = (known after apply)
+      [32m+[0m [0m[1m[0mvolume_id[0m[0m   = (known after apply)
+    }
+
+[1m  # module.nfs[0].aws_volume_attachment.data-volume-attachment[2][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_volume_attachment" "data-volume-attachment" {
+      [32m+[0m [0m[1m[0mdevice_name[0m[0m = "/dev/sdf"
+      [32m+[0m [0m[1m[0mid[0m[0m          = (known after apply)
+      [32m+[0m [0m[1m[0minstance_id[0m[0m = (known after apply)
+      [32m+[0m [0m[1m[0mvolume_id[0m[0m   = (known after apply)
+    }
+
+[1m  # module.nfs[0].aws_volume_attachment.data-volume-attachment[3][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_volume_attachment" "data-volume-attachment" {
+      [32m+[0m [0m[1m[0mdevice_name[0m[0m = "/dev/sdg"
+      [32m+[0m [0m[1m[0mid[0m[0m          = (known after apply)
+      [32m+[0m [0m[1m[0minstance_id[0m[0m = (known after apply)
+      [32m+[0m [0m[1m[0mvolume_id[0m[0m   = (known after apply)
+    }
+
+[1m  # module.vpc.aws_db_subnet_group.database[0][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_db_subnet_group" "database" {
+      [32m+[0m [0m[1m[0marn[0m[0m         = (known after apply)
+      [32m+[0m [0m[1m[0mdescription[0m[0m = "Database subnet group for viya"
+      [32m+[0m [0m[1m[0mid[0m[0m          = (known after apply)
+      [32m+[0m [0m[1m[0mname[0m[0m        = "viya"
+      [32m+[0m [0m[1m[0mname_prefix[0m[0m = (known after apply)
+      [32m+[0m [0m[1m[0msubnet_ids[0m[0m  = (known after apply)
+      [32m+[0m [0m[1m[0mtags[0m[0m        = {
+          [32m+[0m [0m"Name"        = "viya"
+          [32m+[0m [0m"customer"    = "bnl"
+          [32m+[0m [0m"environment" = "development"
+          [32m+[0m [0m"owner"       = "sysadmin"
+          [32m+[0m [0m"project"     = "viya"
+        }
+      [32m+[0m [0m[1m[0mtags_all[0m[0m    = {
+          [32m+[0m [0m"Name"        = "viya"
+          [32m+[0m [0m"customer"    = "bnl"
+          [32m+[0m [0m"environment" = "development"
+          [32m+[0m [0m"owner"       = "sysadmin"
+          [32m+[0m [0m"project"     = "viya"
+        }
+    }
+
+[1m  # module.vpc.aws_eip.nat[0][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_eip" "nat" {
+      [32m+[0m [0m[1m[0mallocation_id[0m[0m        = (known after apply)
+      [32m+[0m [0m[1m[0massociation_id[0m[0m       = (known after apply)
+      [32m+[0m [0m[1m[0mcarrier_ip[0m[0m           = (known after apply)
+      [32m+[0m [0m[1m[0mcustomer_owned_ip[0m[0m    = (known after apply)
+      [32m+[0m [0m[1m[0mdomain[0m[0m               = (known after apply)
+      [32m+[0m [0m[1m[0mid[0m[0m                   = (known after apply)
+      [32m+[0m [0m[1m[0minstance[0m[0m             = (known after apply)
+      [32m+[0m [0m[1m[0mnetwork_border_group[0m[0m = (known after apply)
+      [32m+[0m [0m[1m[0mnetwork_interface[0m[0m    = (known after apply)
+      [32m+[0m [0m[1m[0mprivate_dns[0m[0m          = (known after apply)
+      [32m+[0m [0m[1m[0mprivate_ip[0m[0m           = (known after apply)
+      [32m+[0m [0m[1m[0mpublic_dns[0m[0m           = (known after apply)
+      [32m+[0m [0m[1m[0mpublic_ip[0m[0m            = (known after apply)
+      [32m+[0m [0m[1m[0mpublic_ipv4_pool[0m[0m     = (known after apply)
+      [32m+[0m [0m[1m[0mtags[0m[0m                 = {
+          [32m+[0m [0m"Name"        = "viya-us-east-2a"
+          [32m+[0m [0m"customer"    = "bnl"
+          [32m+[0m [0m"environment" = "development"
+          [32m+[0m [0m"owner"       = "sysadmin"
+          [32m+[0m [0m"project"     = "viya"
+        }
+      [32m+[0m [0m[1m[0mtags_all[0m[0m             = {
+          [32m+[0m [0m"Name"        = "viya-us-east-2a"
+          [32m+[0m [0m"customer"    = "bnl"
+          [32m+[0m [0m"environment" = "development"
+          [32m+[0m [0m"owner"       = "sysadmin"
+          [32m+[0m [0m"project"     = "viya"
+        }
+      [32m+[0m [0m[1m[0mvpc[0m[0m                  = true
+    }
+
+[1m  # module.vpc.aws_internet_gateway.this[0][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_internet_gateway" "this" {
+      [32m+[0m [0m[1m[0marn[0m[0m      = (known after apply)
+      [32m+[0m [0m[1m[0mid[0m[0m       = (known after apply)
+      [32m+[0m [0m[1m[0mowner_id[0m[0m = (known after apply)
+      [32m+[0m [0m[1m[0mtags[0m[0m     = {
+          [32m+[0m [0m"Name"        = "viya"
+          [32m+[0m [0m"customer"    = "bnl"
+          [32m+[0m [0m"environment" = "development"
+          [32m+[0m [0m"owner"       = "sysadmin"
+          [32m+[0m [0m"project"     = "viya"
+        }
+      [32m+[0m [0m[1m[0mtags_all[0m[0m = {
+          [32m+[0m [0m"Name"        = "viya"
+          [32m+[0m [0m"customer"    = "bnl"
+          [32m+[0m [0m"environment" = "development"
+          [32m+[0m [0m"owner"       = "sysadmin"
+          [32m+[0m [0m"project"     = "viya"
+        }
+      [32m+[0m [0m[1m[0mvpc_id[0m[0m   = (known after apply)
+    }
+
+[1m  # module.vpc.aws_nat_gateway.nat_gateway[0][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_nat_gateway" "nat_gateway" {
+      [32m+[0m [0m[1m[0mallocation_id[0m[0m        = (known after apply)
+      [32m+[0m [0m[1m[0mid[0m[0m                   = (known after apply)
+      [32m+[0m [0m[1m[0mnetwork_interface_id[0m[0m = (known after apply)
+      [32m+[0m [0m[1m[0mprivate_ip[0m[0m           = (known after apply)
+      [32m+[0m [0m[1m[0mpublic_ip[0m[0m            = (known after apply)
+      [32m+[0m [0m[1m[0msubnet_id[0m[0m            = (known after apply)
+      [32m+[0m [0m[1m[0mtags[0m[0m                 = {
+          [32m+[0m [0m"Name"        = "viya-us-east-2a"
+          [32m+[0m [0m"customer"    = "bnl"
+          [32m+[0m [0m"environment" = "development"
+          [32m+[0m [0m"owner"       = "sysadmin"
+          [32m+[0m [0m"project"     = "viya"
+        }
+      [32m+[0m [0m[1m[0mtags_all[0m[0m             = {
+          [32m+[0m [0m"Name"        = "viya-us-east-2a"
+          [32m+[0m [0m"customer"    = "bnl"
+          [32m+[0m [0m"environment" = "development"
+          [32m+[0m [0m"owner"       = "sysadmin"
+          [32m+[0m [0m"project"     = "viya"
+        }
+    }
+
+[1m  # module.vpc.aws_route.private_nat_gateway[0][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_route" "private_nat_gateway" {
+      [32m+[0m [0m[1m[0mdestination_cidr_block[0m[0m = "0.0.0.0/0"
+      [32m+[0m [0m[1m[0mid[0m[0m                     = (known after apply)
+      [32m+[0m [0m[1m[0minstance_id[0m[0m            = (known after apply)
+      [32m+[0m [0m[1m[0minstance_owner_id[0m[0m      = (known after apply)
+      [32m+[0m [0m[1m[0mnat_gateway_id[0m[0m         = (known after apply)
+      [32m+[0m [0m[1m[0mnetwork_interface_id[0m[0m   = (known after apply)
+      [32m+[0m [0m[1m[0morigin[0m[0m                 = (known after apply)
+      [32m+[0m [0m[1m[0mroute_table_id[0m[0m         = (known after apply)
+      [32m+[0m [0m[1m[0mstate[0m[0m                  = (known after apply)
+
+      [32m+[0m [0mtimeouts {
+          [32m+[0m [0m[1m[0mcreate[0m[0m = "5m"
+        }
+    }
+
+[1m  # module.vpc.aws_route.public_internet_gateway[0][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_route" "public_internet_gateway" {
+      [32m+[0m [0m[1m[0mdestination_cidr_block[0m[0m = "0.0.0.0/0"
+      [32m+[0m [0m[1m[0mgateway_id[0m[0m             = (known after apply)
+      [32m+[0m [0m[1m[0mid[0m[0m                     = (known after apply)
+      [32m+[0m [0m[1m[0minstance_id[0m[0m            = (known after apply)
+      [32m+[0m [0m[1m[0minstance_owner_id[0m[0m      = (known after apply)
+      [32m+[0m [0m[1m[0mnetwork_interface_id[0m[0m   = (known after apply)
+      [32m+[0m [0m[1m[0morigin[0m[0m                 = (known after apply)
+      [32m+[0m [0m[1m[0mroute_table_id[0m[0m         = (known after apply)
+      [32m+[0m [0m[1m[0mstate[0m[0m                  = (known after apply)
+
+      [32m+[0m [0mtimeouts {
+          [32m+[0m [0m[1m[0mcreate[0m[0m = "5m"
+        }
+    }
+
+[1m  # module.vpc.aws_route_table.private[0][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_route_table" "private" {
+      [32m+[0m [0m[1m[0marn[0m[0m              = (known after apply)
+      [32m+[0m [0m[1m[0mid[0m[0m               = (known after apply)
+      [32m+[0m [0m[1m[0mowner_id[0m[0m         = (known after apply)
+      [32m+[0m [0m[1m[0mpropagating_vgws[0m[0m = (known after apply)
+      [32m+[0m [0m[1m[0mroute[0m[0m            = (known after apply)
+      [32m+[0m [0m[1m[0mtags[0m[0m             = {
+          [32m+[0m [0m"Name"                            = "viya-private-us-east-2a"
+          [32m+[0m [0m"customer"                        = "bnl"
+          [32m+[0m [0m"environment"                     = "development"
+          [32m+[0m [0m"kubernetes.io/cluster/viya-eks"  = "shared"
+          [32m+[0m [0m"kubernetes.io/role/internal-elb" = "1"
+          [32m+[0m [0m"owner"                           = "sysadmin"
+          [32m+[0m [0m"project"                         = "viya"
+        }
+      [32m+[0m [0m[1m[0mtags_all[0m[0m         = {
+          [32m+[0m [0m"Name"                            = "viya-private-us-east-2a"
+          [32m+[0m [0m"customer"                        = "bnl"
+          [32m+[0m [0m"environment"                     = "development"
+          [32m+[0m [0m"kubernetes.io/cluster/viya-eks"  = "shared"
+          [32m+[0m [0m"kubernetes.io/role/internal-elb" = "1"
+          [32m+[0m [0m"owner"                           = "sysadmin"
+          [32m+[0m [0m"project"                         = "viya"
+        }
+      [32m+[0m [0m[1m[0mvpc_id[0m[0m           = (known after apply)
+    }
+
+[1m  # module.vpc.aws_route_table.public[0][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_route_table" "public" {
+      [32m+[0m [0m[1m[0marn[0m[0m              = (known after apply)
+      [32m+[0m [0m[1m[0mid[0m[0m               = (known after apply)
+      [32m+[0m [0m[1m[0mowner_id[0m[0m         = (known after apply)
+      [32m+[0m [0m[1m[0mpropagating_vgws[0m[0m = (known after apply)
+      [32m+[0m [0m[1m[0mroute[0m[0m            = (known after apply)
+      [32m+[0m [0m[1m[0mtags[0m[0m             = {
+          [32m+[0m [0m"Name"                           = "viya-public-us-east-2a"
+          [32m+[0m [0m"customer"                       = "bnl"
+          [32m+[0m [0m"environment"                    = "development"
+          [32m+[0m [0m"kubernetes.io/cluster/viya-eks" = "shared"
+          [32m+[0m [0m"kubernetes.io/role/elb"         = "1"
+          [32m+[0m [0m"owner"                          = "sysadmin"
+          [32m+[0m [0m"project"                        = "viya"
+        }
+      [32m+[0m [0m[1m[0mtags_all[0m[0m         = {
+          [32m+[0m [0m"Name"                           = "viya-public-us-east-2a"
+          [32m+[0m [0m"customer"                       = "bnl"
+          [32m+[0m [0m"environment"                    = "development"
+          [32m+[0m [0m"kubernetes.io/cluster/viya-eks" = "shared"
+          [32m+[0m [0m"kubernetes.io/role/elb"         = "1"
+          [32m+[0m [0m"owner"                          = "sysadmin"
+          [32m+[0m [0m"project"                        = "viya"
+        }
+      [32m+[0m [0m[1m[0mvpc_id[0m[0m           = (known after apply)
+    }
+
+[1m  # module.vpc.aws_route_table_association.database[0][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_route_table_association" "database" {
+      [32m+[0m [0m[1m[0mid[0m[0m             = (known after apply)
+      [32m+[0m [0m[1m[0mroute_table_id[0m[0m = (known after apply)
+      [32m+[0m [0m[1m[0msubnet_id[0m[0m      = (known after apply)
+    }
+
+[1m  # module.vpc.aws_route_table_association.database[1][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_route_table_association" "database" {
+      [32m+[0m [0m[1m[0mid[0m[0m             = (known after apply)
+      [32m+[0m [0m[1m[0mroute_table_id[0m[0m = (known after apply)
+      [32m+[0m [0m[1m[0msubnet_id[0m[0m      = (known after apply)
+    }
+
+[1m  # module.vpc.aws_route_table_association.private[0][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_route_table_association" "private" {
+      [32m+[0m [0m[1m[0mid[0m[0m             = (known after apply)
+      [32m+[0m [0m[1m[0mroute_table_id[0m[0m = (known after apply)
+      [32m+[0m [0m[1m[0msubnet_id[0m[0m      = (known after apply)
+    }
+
+[1m  # module.vpc.aws_route_table_association.private[1][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_route_table_association" "private" {
+      [32m+[0m [0m[1m[0mid[0m[0m             = (known after apply)
+      [32m+[0m [0m[1m[0mroute_table_id[0m[0m = (known after apply)
+      [32m+[0m [0m[1m[0msubnet_id[0m[0m      = (known after apply)
+    }
+
+[1m  # module.vpc.aws_route_table_association.public[0][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_route_table_association" "public" {
+      [32m+[0m [0m[1m[0mid[0m[0m             = (known after apply)
+      [32m+[0m [0m[1m[0mroute_table_id[0m[0m = (known after apply)
+      [32m+[0m [0m[1m[0msubnet_id[0m[0m      = (known after apply)
+    }
+
+[1m  # module.vpc.aws_route_table_association.public[1][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_route_table_association" "public" {
+      [32m+[0m [0m[1m[0mid[0m[0m             = (known after apply)
+      [32m+[0m [0m[1m[0mroute_table_id[0m[0m = (known after apply)
+      [32m+[0m [0m[1m[0msubnet_id[0m[0m      = (known after apply)
+    }
+
+[1m  # module.vpc.aws_subnet.database[0][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_subnet" "database" {
+      [32m+[0m [0m[1m[0marn[0m[0m                             = (known after apply)
+      [32m+[0m [0m[1m[0massign_ipv6_address_on_creation[0m[0m = false
+      [32m+[0m [0m[1m[0mavailability_zone[0m[0m               = "us-east-2a"
+      [32m+[0m [0m[1m[0mavailability_zone_id[0m[0m            = (known after apply)
+      [32m+[0m [0m[1m[0mcidr_block[0m[0m                      = "192.168.128.0/25"
+      [32m+[0m [0m[1m[0mid[0m[0m                              = (known after apply)
+      [32m+[0m [0m[1m[0mipv6_cidr_block_association_id[0m[0m  = (known after apply)
+      [32m+[0m [0m[1m[0mmap_public_ip_on_launch[0m[0m         = false
+      [32m+[0m [0m[1m[0mowner_id[0m[0m                        = (known after apply)
+      [32m+[0m [0m[1m[0mtags[0m[0m                            = {
+          [32m+[0m [0m"Name"        = "viya-db-us-east-2a"
+          [32m+[0m [0m"customer"    = "bnl"
+          [32m+[0m [0m"environment" = "development"
+          [32m+[0m [0m"owner"       = "sysadmin"
+          [32m+[0m [0m"project"     = "viya"
+        }
+      [32m+[0m [0m[1m[0mtags_all[0m[0m                        = {
+          [32m+[0m [0m"Name"        = "viya-db-us-east-2a"
+          [32m+[0m [0m"customer"    = "bnl"
+          [32m+[0m [0m"environment" = "development"
+          [32m+[0m [0m"owner"       = "sysadmin"
+          [32m+[0m [0m"project"     = "viya"
+        }
+      [32m+[0m [0m[1m[0mvpc_id[0m[0m                          = (known after apply)
+    }
+
+[1m  # module.vpc.aws_subnet.database[1][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_subnet" "database" {
+      [32m+[0m [0m[1m[0marn[0m[0m                             = (known after apply)
+      [32m+[0m [0m[1m[0massign_ipv6_address_on_creation[0m[0m = false
+      [32m+[0m [0m[1m[0mavailability_zone[0m[0m               = "us-east-2b"
+      [32m+[0m [0m[1m[0mavailability_zone_id[0m[0m            = (known after apply)
+      [32m+[0m [0m[1m[0mcidr_block[0m[0m                      = "192.168.128.128/25"
+      [32m+[0m [0m[1m[0mid[0m[0m                              = (known after apply)
+      [32m+[0m [0m[1m[0mipv6_cidr_block_association_id[0m[0m  = (known after apply)
+      [32m+[0m [0m[1m[0mmap_public_ip_on_launch[0m[0m         = false
+      [32m+[0m [0m[1m[0mowner_id[0m[0m                        = (known after apply)
+      [32m+[0m [0m[1m[0mtags[0m[0m                            = {
+          [32m+[0m [0m"Name"        = "viya-db-us-east-2b"
+          [32m+[0m [0m"customer"    = "bnl"
+          [32m+[0m [0m"environment" = "development"
+          [32m+[0m [0m"owner"       = "sysadmin"
+          [32m+[0m [0m"project"     = "viya"
+        }
+      [32m+[0m [0m[1m[0mtags_all[0m[0m                        = {
+          [32m+[0m [0m"Name"        = "viya-db-us-east-2b"
+          [32m+[0m [0m"customer"    = "bnl"
+          [32m+[0m [0m"environment" = "development"
+          [32m+[0m [0m"owner"       = "sysadmin"
+          [32m+[0m [0m"project"     = "viya"
+        }
+      [32m+[0m [0m[1m[0mvpc_id[0m[0m                          = (known after apply)
+    }
+
+[1m  # module.vpc.aws_subnet.private[0][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_subnet" "private" {
+      [32m+[0m [0m[1m[0marn[0m[0m                             = (known after apply)
+      [32m+[0m [0m[1m[0massign_ipv6_address_on_creation[0m[0m = false
+      [32m+[0m [0m[1m[0mavailability_zone[0m[0m               = "us-east-2a"
+      [32m+[0m [0m[1m[0mavailability_zone_id[0m[0m            = (known after apply)
+      [32m+[0m [0m[1m[0mcidr_block[0m[0m                      = "192.168.0.0/18"
+      [32m+[0m [0m[1m[0mid[0m[0m                              = (known after apply)
+      [32m+[0m [0m[1m[0mipv6_cidr_block_association_id[0m[0m  = (known after apply)
+      [32m+[0m [0m[1m[0mmap_public_ip_on_launch[0m[0m         = false
+      [32m+[0m [0m[1m[0mowner_id[0m[0m                        = (known after apply)
+      [32m+[0m [0m[1m[0mtags[0m[0m                            = {
+          [32m+[0m [0m"Name"                            = "viya-private-us-east-2a"
+          [32m+[0m [0m"customer"                        = "bnl"
+          [32m+[0m [0m"environment"                     = "development"
+          [32m+[0m [0m"kubernetes.io/cluster/viya-eks"  = "shared"
+          [32m+[0m [0m"kubernetes.io/role/internal-elb" = "1"
+          [32m+[0m [0m"owner"                           = "sysadmin"
+          [32m+[0m [0m"project"                         = "viya"
+        }
+      [32m+[0m [0m[1m[0mtags_all[0m[0m                        = {
+          [32m+[0m [0m"Name"                            = "viya-private-us-east-2a"
+          [32m+[0m [0m"customer"                        = "bnl"
+          [32m+[0m [0m"environment"                     = "development"
+          [32m+[0m [0m"kubernetes.io/cluster/viya-eks"  = "shared"
+          [32m+[0m [0m"kubernetes.io/role/internal-elb" = "1"
+          [32m+[0m [0m"owner"                           = "sysadmin"
+          [32m+[0m [0m"project"                         = "viya"
+        }
+      [32m+[0m [0m[1m[0mvpc_id[0m[0m                          = (known after apply)
+    }
+
+[1m  # module.vpc.aws_subnet.private[1][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_subnet" "private" {
+      [32m+[0m [0m[1m[0marn[0m[0m                             = (known after apply)
+      [32m+[0m [0m[1m[0massign_ipv6_address_on_creation[0m[0m = false
+      [32m+[0m [0m[1m[0mavailability_zone[0m[0m               = "us-east-2b"
+      [32m+[0m [0m[1m[0mavailability_zone_id[0m[0m            = (known after apply)
+      [32m+[0m [0m[1m[0mcidr_block[0m[0m                      = "192.168.64.0/18"
+      [32m+[0m [0m[1m[0mid[0m[0m                              = (known after apply)
+      [32m+[0m [0m[1m[0mipv6_cidr_block_association_id[0m[0m  = (known after apply)
+      [32m+[0m [0m[1m[0mmap_public_ip_on_launch[0m[0m         = false
+      [32m+[0m [0m[1m[0mowner_id[0m[0m                        = (known after apply)
+      [32m+[0m [0m[1m[0mtags[0m[0m                            = {
+          [32m+[0m [0m"Name"                            = "viya-private-us-east-2b"
+          [32m+[0m [0m"customer"                        = "bnl"
+          [32m+[0m [0m"environment"                     = "development"
+          [32m+[0m [0m"kubernetes.io/cluster/viya-eks"  = "shared"
+          [32m+[0m [0m"kubernetes.io/role/internal-elb" = "1"
+          [32m+[0m [0m"owner"                           = "sysadmin"
+          [32m+[0m [0m"project"                         = "viya"
+        }
+      [32m+[0m [0m[1m[0mtags_all[0m[0m                        = {
+          [32m+[0m [0m"Name"                            = "viya-private-us-east-2b"
+          [32m+[0m [0m"customer"                        = "bnl"
+          [32m+[0m [0m"environment"                     = "development"
+          [32m+[0m [0m"kubernetes.io/cluster/viya-eks"  = "shared"
+          [32m+[0m [0m"kubernetes.io/role/internal-elb" = "1"
+          [32m+[0m [0m"owner"                           = "sysadmin"
+          [32m+[0m [0m"project"                         = "viya"
+        }
+      [32m+[0m [0m[1m[0mvpc_id[0m[0m                          = (known after apply)
+    }
+
+[1m  # module.vpc.aws_subnet.public[0][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_subnet" "public" {
+      [32m+[0m [0m[1m[0marn[0m[0m                             = (known after apply)
+      [32m+[0m [0m[1m[0massign_ipv6_address_on_creation[0m[0m = false
+      [32m+[0m [0m[1m[0mavailability_zone[0m[0m               = "us-east-2a"
+      [32m+[0m [0m[1m[0mavailability_zone_id[0m[0m            = (known after apply)
+      [32m+[0m [0m[1m[0mcidr_block[0m[0m                      = "192.168.129.0/25"
+      [32m+[0m [0m[1m[0mid[0m[0m                              = (known after apply)
+      [32m+[0m [0m[1m[0mipv6_cidr_block_association_id[0m[0m  = (known after apply)
+      [32m+[0m [0m[1m[0mmap_public_ip_on_launch[0m[0m         = true
+      [32m+[0m [0m[1m[0mowner_id[0m[0m                        = (known after apply)
+      [32m+[0m [0m[1m[0mtags[0m[0m                            = {
+          [32m+[0m [0m"Name"                           = "viya-public-us-east-2a"
+          [32m+[0m [0m"customer"                       = "bnl"
+          [32m+[0m [0m"environment"                    = "development"
+          [32m+[0m [0m"kubernetes.io/cluster/viya-eks" = "shared"
+          [32m+[0m [0m"kubernetes.io/role/elb"         = "1"
+          [32m+[0m [0m"owner"                          = "sysadmin"
+          [32m+[0m [0m"project"                        = "viya"
+        }
+      [32m+[0m [0m[1m[0mtags_all[0m[0m                        = {
+          [32m+[0m [0m"Name"                           = "viya-public-us-east-2a"
+          [32m+[0m [0m"customer"                       = "bnl"
+          [32m+[0m [0m"environment"                    = "development"
+          [32m+[0m [0m"kubernetes.io/cluster/viya-eks" = "shared"
+          [32m+[0m [0m"kubernetes.io/role/elb"         = "1"
+          [32m+[0m [0m"owner"                          = "sysadmin"
+          [32m+[0m [0m"project"                        = "viya"
+        }
+      [32m+[0m [0m[1m[0mvpc_id[0m[0m                          = (known after apply)
+    }
+
+[1m  # module.vpc.aws_subnet.public[1][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_subnet" "public" {
+      [32m+[0m [0m[1m[0marn[0m[0m                             = (known after apply)
+      [32m+[0m [0m[1m[0massign_ipv6_address_on_creation[0m[0m = false
+      [32m+[0m [0m[1m[0mavailability_zone[0m[0m               = "us-east-2b"
+      [32m+[0m [0m[1m[0mavailability_zone_id[0m[0m            = (known after apply)
+      [32m+[0m [0m[1m[0mcidr_block[0m[0m                      = "192.168.129.128/25"
+      [32m+[0m [0m[1m[0mid[0m[0m                              = (known after apply)
+      [32m+[0m [0m[1m[0mipv6_cidr_block_association_id[0m[0m  = (known after apply)
+      [32m+[0m [0m[1m[0mmap_public_ip_on_launch[0m[0m         = true
+      [32m+[0m [0m[1m[0mowner_id[0m[0m                        = (known after apply)
+      [32m+[0m [0m[1m[0mtags[0m[0m                            = {
+          [32m+[0m [0m"Name"                           = "viya-public-us-east-2b"
+          [32m+[0m [0m"customer"                       = "bnl"
+          [32m+[0m [0m"environment"                    = "development"
+          [32m+[0m [0m"kubernetes.io/cluster/viya-eks" = "shared"
+          [32m+[0m [0m"kubernetes.io/role/elb"         = "1"
+          [32m+[0m [0m"owner"                          = "sysadmin"
+          [32m+[0m [0m"project"                        = "viya"
+        }
+      [32m+[0m [0m[1m[0mtags_all[0m[0m                        = {
+          [32m+[0m [0m"Name"                           = "viya-public-us-east-2b"
+          [32m+[0m [0m"customer"                       = "bnl"
+          [32m+[0m [0m"environment"                    = "development"
+          [32m+[0m [0m"kubernetes.io/cluster/viya-eks" = "shared"
+          [32m+[0m [0m"kubernetes.io/role/elb"         = "1"
+          [32m+[0m [0m"owner"                          = "sysadmin"
+          [32m+[0m [0m"project"                        = "viya"
+        }
+      [32m+[0m [0m[1m[0mvpc_id[0m[0m                          = (known after apply)
+    }
+
+[1m  # module.vpc.aws_vpc.vpc[0][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_vpc" "vpc" {
+      [32m+[0m [0m[1m[0marn[0m[0m                              = (known after apply)
+      [32m+[0m [0m[1m[0massign_generated_ipv6_cidr_block[0m[0m = false
+      [32m+[0m [0m[1m[0mcidr_block[0m[0m                       = "192.168.0.0/16"
+      [32m+[0m [0m[1m[0mdefault_network_acl_id[0m[0m           = (known after apply)
+      [32m+[0m [0m[1m[0mdefault_route_table_id[0m[0m           = (known after apply)
+      [32m+[0m [0m[1m[0mdefault_security_group_id[0m[0m        = (known after apply)
+      [32m+[0m [0m[1m[0mdhcp_options_id[0m[0m                  = (known after apply)
+      [32m+[0m [0m[1m[0menable_classiclink[0m[0m               = (known after apply)
+      [32m+[0m [0m[1m[0menable_classiclink_dns_support[0m[0m   = (known after apply)
+      [32m+[0m [0m[1m[0menable_dns_hostnames[0m[0m             = true
+      [32m+[0m [0m[1m[0menable_dns_support[0m[0m               = true
+      [32m+[0m [0m[1m[0mid[0m[0m                               = (known after apply)
+      [32m+[0m [0m[1m[0minstance_tenancy[0m[0m                 = "default"
+      [32m+[0m [0m[1m[0mipv6_association_id[0m[0m              = (known after apply)
+      [32m+[0m [0m[1m[0mipv6_cidr_block[0m[0m                  = (known after apply)
+      [32m+[0m [0m[1m[0mmain_route_table_id[0m[0m              = (known after apply)
+      [32m+[0m [0m[1m[0mowner_id[0m[0m                         = (known after apply)
+      [32m+[0m [0m[1m[0mtags[0m[0m                             = {
+          [32m+[0m [0m"Name"        = "viya-vpc"
+          [32m+[0m [0m"customer"    = "bnl"
+          [32m+[0m [0m"environment" = "development"
+          [32m+[0m [0m"owner"       = "sysadmin"
+          [32m+[0m [0m"project"     = "viya"
+        }
+      [32m+[0m [0m[1m[0mtags_all[0m[0m                         = {
+          [32m+[0m [0m"Name"        = "viya-vpc"
+          [32m+[0m [0m"customer"    = "bnl"
+          [32m+[0m [0m"environment" = "development"
+          [32m+[0m [0m"owner"       = "sysadmin"
+          [32m+[0m [0m"project"     = "viya"
+        }
+    }
+
+[1m  # module.vpc.aws_vpc_endpoint.private_endpoints[0][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_vpc_endpoint" "private_endpoints" {
+      [32m+[0m [0m[1m[0marn[0m[0m                   = (known after apply)
+      [32m+[0m [0m[1m[0mcidr_blocks[0m[0m           = (known after apply)
+      [32m+[0m [0m[1m[0mdns_entry[0m[0m             = (known after apply)
+      [32m+[0m [0m[1m[0mid[0m[0m                    = (known after apply)
+      [32m+[0m [0m[1m[0mnetwork_interface_ids[0m[0m = (known after apply)
+      [32m+[0m [0m[1m[0mowner_id[0m[0m              = (known after apply)
+      [32m+[0m [0m[1m[0mpolicy[0m[0m                = (known after apply)
+      [32m+[0m [0m[1m[0mprefix_list_id[0m[0m        = (known after apply)
+      [32m+[0m [0m[1m[0mprivate_dns_enabled[0m[0m   = false
+      [32m+[0m [0m[1m[0mrequester_managed[0m[0m     = (known after apply)
+      [32m+[0m [0m[1m[0mroute_table_ids[0m[0m       = (known after apply)
+      [32m+[0m [0m[1m[0msecurity_group_ids[0m[0m    = (known after apply)
+      [32m+[0m [0m[1m[0mservice_name[0m[0m          = "com.amazonaws.us-east-2.ec2"
+      [32m+[0m [0m[1m[0mstate[0m[0m                 = (known after apply)
+      [32m+[0m [0m[1m[0msubnet_ids[0m[0m            = (known after apply)
+      [32m+[0m [0m[1m[0mtags[0m[0m                  = {
+          [32m+[0m [0m"Name"        = "viya-private-endpoint-ec2"
+          [32m+[0m [0m"customer"    = "bnl"
+          [32m+[0m [0m"environment" = "development"
+          [32m+[0m [0m"owner"       = "sysadmin"
+          [32m+[0m [0m"project"     = "viya"
+        }
+      [32m+[0m [0m[1m[0mtags_all[0m[0m              = {
+          [32m+[0m [0m"Name"        = "viya-private-endpoint-ec2"
+          [32m+[0m [0m"customer"    = "bnl"
+          [32m+[0m [0m"environment" = "development"
+          [32m+[0m [0m"owner"       = "sysadmin"
+          [32m+[0m [0m"project"     = "viya"
+        }
+      [32m+[0m [0m[1m[0mvpc_endpoint_type[0m[0m     = "Interface"
+      [32m+[0m [0m[1m[0mvpc_id[0m[0m                = (known after apply)
+    }
+
+[1m  # module.vpc.aws_vpc_endpoint.private_endpoints[1][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_vpc_endpoint" "private_endpoints" {
+      [32m+[0m [0m[1m[0marn[0m[0m                   = (known after apply)
+      [32m+[0m [0m[1m[0mcidr_blocks[0m[0m           = (known after apply)
+      [32m+[0m [0m[1m[0mdns_entry[0m[0m             = (known after apply)
+      [32m+[0m [0m[1m[0mid[0m[0m                    = (known after apply)
+      [32m+[0m [0m[1m[0mnetwork_interface_ids[0m[0m = (known after apply)
+      [32m+[0m [0m[1m[0mowner_id[0m[0m              = (known after apply)
+      [32m+[0m [0m[1m[0mpolicy[0m[0m                = (known after apply)
+      [32m+[0m [0m[1m[0mprefix_list_id[0m[0m        = (known after apply)
+      [32m+[0m [0m[1m[0mprivate_dns_enabled[0m[0m   = false
+      [32m+[0m [0m[1m[0mrequester_managed[0m[0m     = (known after apply)
+      [32m+[0m [0m[1m[0mroute_table_ids[0m[0m       = (known after apply)
+      [32m+[0m [0m[1m[0msecurity_group_ids[0m[0m    = (known after apply)
+      [32m+[0m [0m[1m[0mservice_name[0m[0m          = "com.amazonaws.us-east-2.ecr.api"
+      [32m+[0m [0m[1m[0mstate[0m[0m                 = (known after apply)
+      [32m+[0m [0m[1m[0msubnet_ids[0m[0m            = (known after apply)
+      [32m+[0m [0m[1m[0mtags[0m[0m                  = {
+          [32m+[0m [0m"Name"        = "viya-private-endpoint-ecr.api"
+          [32m+[0m [0m"customer"    = "bnl"
+          [32m+[0m [0m"environment" = "development"
+          [32m+[0m [0m"owner"       = "sysadmin"
+          [32m+[0m [0m"project"     = "viya"
+        }
+      [32m+[0m [0m[1m[0mtags_all[0m[0m              = {
+          [32m+[0m [0m"Name"        = "viya-private-endpoint-ecr.api"
+          [32m+[0m [0m"customer"    = "bnl"
+          [32m+[0m [0m"environment" = "development"
+          [32m+[0m [0m"owner"       = "sysadmin"
+          [32m+[0m [0m"project"     = "viya"
+        }
+      [32m+[0m [0m[1m[0mvpc_endpoint_type[0m[0m     = "Interface"
+      [32m+[0m [0m[1m[0mvpc_id[0m[0m                = (known after apply)
+    }
+
+[1m  # module.vpc.aws_vpc_endpoint.private_endpoints[2][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_vpc_endpoint" "private_endpoints" {
+      [32m+[0m [0m[1m[0marn[0m[0m                   = (known after apply)
+      [32m+[0m [0m[1m[0mcidr_blocks[0m[0m           = (known after apply)
+      [32m+[0m [0m[1m[0mdns_entry[0m[0m             = (known after apply)
+      [32m+[0m [0m[1m[0mid[0m[0m                    = (known after apply)
+      [32m+[0m [0m[1m[0mnetwork_interface_ids[0m[0m = (known after apply)
+      [32m+[0m [0m[1m[0mowner_id[0m[0m              = (known after apply)
+      [32m+[0m [0m[1m[0mpolicy[0m[0m                = (known after apply)
+      [32m+[0m [0m[1m[0mprefix_list_id[0m[0m        = (known after apply)
+      [32m+[0m [0m[1m[0mprivate_dns_enabled[0m[0m   = false
+      [32m+[0m [0m[1m[0mrequester_managed[0m[0m     = (known after apply)
+      [32m+[0m [0m[1m[0mroute_table_ids[0m[0m       = (known after apply)
+      [32m+[0m [0m[1m[0msecurity_group_ids[0m[0m    = (known after apply)
+      [32m+[0m [0m[1m[0mservice_name[0m[0m          = "com.amazonaws.us-east-2.ecr.dkr"
+      [32m+[0m [0m[1m[0mstate[0m[0m                 = (known after apply)
+      [32m+[0m [0m[1m[0msubnet_ids[0m[0m            = (known after apply)
+      [32m+[0m [0m[1m[0mtags[0m[0m                  = {
+          [32m+[0m [0m"Name"        = "viya-private-endpoint-ecr.dkr"
+          [32m+[0m [0m"customer"    = "bnl"
+          [32m+[0m [0m"environment" = "development"
+          [32m+[0m [0m"owner"       = "sysadmin"
+          [32m+[0m [0m"project"     = "viya"
+        }
+      [32m+[0m [0m[1m[0mtags_all[0m[0m              = {
+          [32m+[0m [0m"Name"        = "viya-private-endpoint-ecr.dkr"
+          [32m+[0m [0m"customer"    = "bnl"
+          [32m+[0m [0m"environment" = "development"
+          [32m+[0m [0m"owner"       = "sysadmin"
+          [32m+[0m [0m"project"     = "viya"
+        }
+      [32m+[0m [0m[1m[0mvpc_endpoint_type[0m[0m     = "Interface"
+      [32m+[0m [0m[1m[0mvpc_id[0m[0m                = (known after apply)
+    }
+
+[1m  # module.vpc.aws_vpc_endpoint.private_endpoints[3][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_vpc_endpoint" "private_endpoints" {
+      [32m+[0m [0m[1m[0marn[0m[0m                   = (known after apply)
+      [32m+[0m [0m[1m[0mcidr_blocks[0m[0m           = (known after apply)
+      [32m+[0m [0m[1m[0mdns_entry[0m[0m             = (known after apply)
+      [32m+[0m [0m[1m[0mid[0m[0m                    = (known after apply)
+      [32m+[0m [0m[1m[0mnetwork_interface_ids[0m[0m = (known after apply)
+      [32m+[0m [0m[1m[0mowner_id[0m[0m              = (known after apply)
+      [32m+[0m [0m[1m[0mpolicy[0m[0m                = (known after apply)
+      [32m+[0m [0m[1m[0mprefix_list_id[0m[0m        = (known after apply)
+      [32m+[0m [0m[1m[0mprivate_dns_enabled[0m[0m   = false
+      [32m+[0m [0m[1m[0mrequester_managed[0m[0m     = (known after apply)
+      [32m+[0m [0m[1m[0mroute_table_ids[0m[0m       = (known after apply)
+      [32m+[0m [0m[1m[0msecurity_group_ids[0m[0m    = (known after apply)
+      [32m+[0m [0m[1m[0mservice_name[0m[0m          = "com.amazonaws.us-east-2.s3"
+      [32m+[0m [0m[1m[0mstate[0m[0m                 = (known after apply)
+      [32m+[0m [0m[1m[0msubnet_ids[0m[0m            = (known after apply)
+      [32m+[0m [0m[1m[0mtags[0m[0m                  = {
+          [32m+[0m [0m"Name"        = "viya-private-endpoint-s3"
+          [32m+[0m [0m"customer"    = "bnl"
+          [32m+[0m [0m"environment" = "development"
+          [32m+[0m [0m"owner"       = "sysadmin"
+          [32m+[0m [0m"project"     = "viya"
+        }
+      [32m+[0m [0m[1m[0mtags_all[0m[0m              = {
+          [32m+[0m [0m"Name"        = "viya-private-endpoint-s3"
+          [32m+[0m [0m"customer"    = "bnl"
+          [32m+[0m [0m"environment" = "development"
+          [32m+[0m [0m"owner"       = "sysadmin"
+          [32m+[0m [0m"project"     = "viya"
+        }
+      [32m+[0m [0m[1m[0mvpc_endpoint_type[0m[0m     = "Interface"
+      [32m+[0m [0m[1m[0mvpc_id[0m[0m                = (known after apply)
+    }
+
+[1m  # module.vpc.aws_vpc_endpoint.private_endpoints[4][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_vpc_endpoint" "private_endpoints" {
+      [32m+[0m [0m[1m[0marn[0m[0m                   = (known after apply)
+      [32m+[0m [0m[1m[0mcidr_blocks[0m[0m           = (known after apply)
+      [32m+[0m [0m[1m[0mdns_entry[0m[0m             = (known after apply)
+      [32m+[0m [0m[1m[0mid[0m[0m                    = (known after apply)
+      [32m+[0m [0m[1m[0mnetwork_interface_ids[0m[0m = (known after apply)
+      [32m+[0m [0m[1m[0mowner_id[0m[0m              = (known after apply)
+      [32m+[0m [0m[1m[0mpolicy[0m[0m                = (known after apply)
+      [32m+[0m [0m[1m[0mprefix_list_id[0m[0m        = (known after apply)
+      [32m+[0m [0m[1m[0mprivate_dns_enabled[0m[0m   = false
+      [32m+[0m [0m[1m[0mrequester_managed[0m[0m     = (known after apply)
+      [32m+[0m [0m[1m[0mroute_table_ids[0m[0m       = (known after apply)
+      [32m+[0m [0m[1m[0msecurity_group_ids[0m[0m    = (known after apply)
+      [32m+[0m [0m[1m[0mservice_name[0m[0m          = "com.amazonaws.us-east-2.logs"
+      [32m+[0m [0m[1m[0mstate[0m[0m                 = (known after apply)
+      [32m+[0m [0m[1m[0msubnet_ids[0m[0m            = (known after apply)
+      [32m+[0m [0m[1m[0mtags[0m[0m                  = {
+          [32m+[0m [0m"Name"        = "viya-private-endpoint-logs"
+          [32m+[0m [0m"customer"    = "bnl"
+          [32m+[0m [0m"environment" = "development"
+          [32m+[0m [0m"owner"       = "sysadmin"
+          [32m+[0m [0m"project"     = "viya"
+        }
+      [32m+[0m [0m[1m[0mtags_all[0m[0m              = {
+          [32m+[0m [0m"Name"        = "viya-private-endpoint-logs"
+          [32m+[0m [0m"customer"    = "bnl"
+          [32m+[0m [0m"environment" = "development"
+          [32m+[0m [0m"owner"       = "sysadmin"
+          [32m+[0m [0m"project"     = "viya"
+        }
+      [32m+[0m [0m[1m[0mvpc_endpoint_type[0m[0m     = "Interface"
+      [32m+[0m [0m[1m[0mvpc_id[0m[0m                = (known after apply)
+    }
+
+[1m  # module.vpc.aws_vpc_endpoint.private_endpoints[5][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_vpc_endpoint" "private_endpoints" {
+      [32m+[0m [0m[1m[0marn[0m[0m                   = (known after apply)
+      [32m+[0m [0m[1m[0mcidr_blocks[0m[0m           = (known after apply)
+      [32m+[0m [0m[1m[0mdns_entry[0m[0m             = (known after apply)
+      [32m+[0m [0m[1m[0mid[0m[0m                    = (known after apply)
+      [32m+[0m [0m[1m[0mnetwork_interface_ids[0m[0m = (known after apply)
+      [32m+[0m [0m[1m[0mowner_id[0m[0m              = (known after apply)
+      [32m+[0m [0m[1m[0mpolicy[0m[0m                = (known after apply)
+      [32m+[0m [0m[1m[0mprefix_list_id[0m[0m        = (known after apply)
+      [32m+[0m [0m[1m[0mprivate_dns_enabled[0m[0m   = false
+      [32m+[0m [0m[1m[0mrequester_managed[0m[0m     = (known after apply)
+      [32m+[0m [0m[1m[0mroute_table_ids[0m[0m       = (known after apply)
+      [32m+[0m [0m[1m[0msecurity_group_ids[0m[0m    = (known after apply)
+      [32m+[0m [0m[1m[0mservice_name[0m[0m          = "com.amazonaws.us-east-2.sts"
+      [32m+[0m [0m[1m[0mstate[0m[0m                 = (known after apply)
+      [32m+[0m [0m[1m[0msubnet_ids[0m[0m            = (known after apply)
+      [32m+[0m [0m[1m[0mtags[0m[0m                  = {
+          [32m+[0m [0m"Name"        = "viya-private-endpoint-sts"
+          [32m+[0m [0m"customer"    = "bnl"
+          [32m+[0m [0m"environment" = "development"
+          [32m+[0m [0m"owner"       = "sysadmin"
+          [32m+[0m [0m"project"     = "viya"
+        }
+      [32m+[0m [0m[1m[0mtags_all[0m[0m              = {
+          [32m+[0m [0m"Name"        = "viya-private-endpoint-sts"
+          [32m+[0m [0m"customer"    = "bnl"
+          [32m+[0m [0m"environment" = "development"
+          [32m+[0m [0m"owner"       = "sysadmin"
+          [32m+[0m [0m"project"     = "viya"
+        }
+      [32m+[0m [0m[1m[0mvpc_endpoint_type[0m[0m     = "Interface"
+      [32m+[0m [0m[1m[0mvpc_id[0m[0m                = (known after apply)
+    }
+
+[1m  # module.vpc.aws_vpc_endpoint.private_endpoints[6][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_vpc_endpoint" "private_endpoints" {
+      [32m+[0m [0m[1m[0marn[0m[0m                   = (known after apply)
+      [32m+[0m [0m[1m[0mcidr_blocks[0m[0m           = (known after apply)
+      [32m+[0m [0m[1m[0mdns_entry[0m[0m             = (known after apply)
+      [32m+[0m [0m[1m[0mid[0m[0m                    = (known after apply)
+      [32m+[0m [0m[1m[0mnetwork_interface_ids[0m[0m = (known after apply)
+      [32m+[0m [0m[1m[0mowner_id[0m[0m              = (known after apply)
+      [32m+[0m [0m[1m[0mpolicy[0m[0m                = (known after apply)
+      [32m+[0m [0m[1m[0mprefix_list_id[0m[0m        = (known after apply)
+      [32m+[0m [0m[1m[0mprivate_dns_enabled[0m[0m   = false
+      [32m+[0m [0m[1m[0mrequester_managed[0m[0m     = (known after apply)
+      [32m+[0m [0m[1m[0mroute_table_ids[0m[0m       = (known after apply)
+      [32m+[0m [0m[1m[0msecurity_group_ids[0m[0m    = (known after apply)
+      [32m+[0m [0m[1m[0mservice_name[0m[0m          = "com.amazonaws.us-east-2.elasticloadbalancing"
+      [32m+[0m [0m[1m[0mstate[0m[0m                 = (known after apply)
+      [32m+[0m [0m[1m[0msubnet_ids[0m[0m            = (known after apply)
+      [32m+[0m [0m[1m[0mtags[0m[0m                  = {
+          [32m+[0m [0m"Name"        = "viya-private-endpoint-elasticloadbalancing"
+          [32m+[0m [0m"customer"    = "bnl"
+          [32m+[0m [0m"environment" = "development"
+          [32m+[0m [0m"owner"       = "sysadmin"
+          [32m+[0m [0m"project"     = "viya"
+        }
+      [32m+[0m [0m[1m[0mtags_all[0m[0m              = {
+          [32m+[0m [0m"Name"        = "viya-private-endpoint-elasticloadbalancing"
+          [32m+[0m [0m"customer"    = "bnl"
+          [32m+[0m [0m"environment" = "development"
+          [32m+[0m [0m"owner"       = "sysadmin"
+          [32m+[0m [0m"project"     = "viya"
+        }
+      [32m+[0m [0m[1m[0mvpc_endpoint_type[0m[0m     = "Interface"
+      [32m+[0m [0m[1m[0mvpc_id[0m[0m                = (known after apply)
+    }
+
+[1m  # module.vpc.aws_vpc_endpoint.private_endpoints[7][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_vpc_endpoint" "private_endpoints" {
+      [32m+[0m [0m[1m[0marn[0m[0m                   = (known after apply)
+      [32m+[0m [0m[1m[0mcidr_blocks[0m[0m           = (known after apply)
+      [32m+[0m [0m[1m[0mdns_entry[0m[0m             = (known after apply)
+      [32m+[0m [0m[1m[0mid[0m[0m                    = (known after apply)
+      [32m+[0m [0m[1m[0mnetwork_interface_ids[0m[0m = (known after apply)
+      [32m+[0m [0m[1m[0mowner_id[0m[0m              = (known after apply)
+      [32m+[0m [0m[1m[0mpolicy[0m[0m                = (known after apply)
+      [32m+[0m [0m[1m[0mprefix_list_id[0m[0m        = (known after apply)
+      [32m+[0m [0m[1m[0mprivate_dns_enabled[0m[0m   = false
+      [32m+[0m [0m[1m[0mrequester_managed[0m[0m     = (known after apply)
+      [32m+[0m [0m[1m[0mroute_table_ids[0m[0m       = (known after apply)
+      [32m+[0m [0m[1m[0msecurity_group_ids[0m[0m    = (known after apply)
+      [32m+[0m [0m[1m[0mservice_name[0m[0m          = "com.amazonaws.us-east-2.autoscaling"
+      [32m+[0m [0m[1m[0mstate[0m[0m                 = (known after apply)
+      [32m+[0m [0m[1m[0msubnet_ids[0m[0m            = (known after apply)
+      [32m+[0m [0m[1m[0mtags[0m[0m                  = {
+          [32m+[0m [0m"Name"        = "viya-private-endpoint-autoscaling"
+          [32m+[0m [0m"customer"    = "bnl"
+          [32m+[0m [0m"environment" = "development"
+          [32m+[0m [0m"owner"       = "sysadmin"
+          [32m+[0m [0m"project"     = "viya"
+        }
+      [32m+[0m [0m[1m[0mtags_all[0m[0m              = {
+          [32m+[0m [0m"Name"        = "viya-private-endpoint-autoscaling"
+          [32m+[0m [0m"customer"    = "bnl"
+          [32m+[0m [0m"environment" = "development"
+          [32m+[0m [0m"owner"       = "sysadmin"
+          [32m+[0m [0m"project"     = "viya"
+        }
+      [32m+[0m [0m[1m[0mvpc_endpoint_type[0m[0m     = "Interface"
+      [32m+[0m [0m[1m[0mvpc_id[0m[0m                = (known after apply)
+    }
+
+[1m  # module.autoscaling[0].module.iam_assumable_role_with_oidc.data.aws_iam_policy_document.assume_role_with_oidc[0][0m will be read during apply
+  # (config refers to values not yet known)[0m[0m
+[0m [36m<=[0m[0m data "aws_iam_policy_document" "assume_role_with_oidc"  {
+      [32m+[0m [0m[1m[0mid[0m[0m   = (known after apply)
+      [32m+[0m [0m[1m[0mjson[0m[0m = (known after apply)
+
+      [32m+[0m [0mstatement {
+          [32m+[0m [0m[1m[0mactions[0m[0m       = (known after apply)
+          [32m+[0m [0m[1m[0meffect[0m[0m        = (known after apply)
+          [32m+[0m [0m[1m[0mnot_actions[0m[0m   = (known after apply)
+          [32m+[0m [0m[1m[0mnot_resources[0m[0m = (known after apply)
+          [32m+[0m [0m[1m[0mresources[0m[0m     = (known after apply)
+          [32m+[0m [0m[1m[0msid[0m[0m           = (known after apply)
+
+          [32m+[0m [0mcondition {
+              [32m+[0m [0m[1m[0mtest[0m[0m     = (known after apply)
+              [32m+[0m [0m[1m[0mvalues[0m[0m   = (known after apply)
+              [32m+[0m [0m[1m[0mvariable[0m[0m = (known after apply)
+            }
+
+          [32m+[0m [0mnot_principals {
+              [32m+[0m [0m[1m[0midentifiers[0m[0m = (known after apply)
+              [32m+[0m [0m[1m[0mtype[0m[0m        = (known after apply)
+            }
+
+          [32m+[0m [0mprincipals {
+              [32m+[0m [0m[1m[0midentifiers[0m[0m = (known after apply)
+              [32m+[0m [0m[1m[0mtype[0m[0m        = (known after apply)
+            }
+        }
+    }
+
+[1m  # module.autoscaling[0].module.iam_assumable_role_with_oidc.aws_iam_role.this[0][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_iam_role" "this" {
+      [32m+[0m [0m[1m[0marn[0m[0m                   = (known after apply)
+      [32m+[0m [0m[1m[0massume_role_policy[0m[0m    = (known after apply)
+      [32m+[0m [0m[1m[0mcreate_date[0m[0m           = (known after apply)
+      [32m+[0m [0m[1m[0mforce_detach_policies[0m[0m = false
+      [32m+[0m [0m[1m[0mid[0m[0m                    = (known after apply)
+      [32m+[0m [0m[1m[0mmanaged_policy_arns[0m[0m   = (known after apply)
+      [32m+[0m [0m[1m[0mmax_session_duration[0m[0m  = 3600
+      [32m+[0m [0m[1m[0mname[0m[0m                  = "viya-cluster-autoscaler"
+      [32m+[0m [0m[1m[0mpath[0m[0m                  = "/"
+      [32m+[0m [0m[1m[0mtags[0m[0m                  = {
+          [32m+[0m [0m"Role" = "viya-cluster-autoscaler"
+        }
+      [32m+[0m [0m[1m[0mtags_all[0m[0m              = {
+          [32m+[0m [0m"Role" = "viya-cluster-autoscaler"
+        }
+      [32m+[0m [0m[1m[0munique_id[0m[0m             = (known after apply)
+
+      [32m+[0m [0minline_policy {
+          [32m+[0m [0m[1m[0mname[0m[0m   = (known after apply)
+          [32m+[0m [0m[1m[0mpolicy[0m[0m = (known after apply)
+        }
+    }
+
+[1m  # module.autoscaling[0].module.iam_assumable_role_with_oidc.aws_iam_role_policy_attachment.custom[0][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_iam_role_policy_attachment" "custom" {
+      [32m+[0m [0m[1m[0mid[0m[0m         = (known after apply)
+      [32m+[0m [0m[1m[0mpolicy_arn[0m[0m = (known after apply)
+      [32m+[0m [0m[1m[0mrole[0m[0m       = "viya-cluster-autoscaler"
+    }
+
+[1m  # module.postgresql["default"].module.db_instance.aws_db_instance.this[0][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_db_instance" "this" {
+      [32m+[0m [0m[1m[0maddress[0m[0m                               = (known after apply)
+      [32m+[0m [0m[1m[0mallocated_storage[0m[0m                     = 50
+      [32m+[0m [0m[1m[0mallow_major_version_upgrade[0m[0m           = false
+      [32m+[0m [0m[1m[0mapply_immediately[0m[0m                     = false
+      [32m+[0m [0m[1m[0marn[0m[0m                                   = (known after apply)
+      [32m+[0m [0m[1m[0mauto_minor_version_upgrade[0m[0m            = true
+      [32m+[0m [0m[1m[0mavailability_zone[0m[0m                     = (known after apply)
+      [32m+[0m [0m[1m[0mbackup_retention_period[0m[0m               = 7
+      [32m+[0m [0m[1m[0mbackup_window[0m[0m                         = "03:00-06:00"
+      [32m+[0m [0m[1m[0mca_cert_identifier[0m[0m                    = (known after apply)
+      [32m+[0m [0m[1m[0mcharacter_set_name[0m[0m                    = (known after apply)
+      [32m+[0m [0m[1m[0mcopy_tags_to_snapshot[0m[0m                 = false
+      [32m+[0m [0m[1m[0mdb_subnet_group_name[0m[0m                  = (known after apply)
+      [32m+[0m [0m[1m[0mdelete_automated_backups[0m[0m              = true
+      [32m+[0m [0m[1m[0mdeletion_protection[0m[0m                   = false
+      [32m+[0m [0m[1m[0mendpoint[0m[0m                              = (known after apply)
+      [32m+[0m [0m[1m[0mengine[0m[0m                                = "postgres"
+      [32m+[0m [0m[1m[0mengine_version[0m[0m                        = "11"
+      [32m+[0m [0m[1m[0mfinal_snapshot_identifier[0m[0m             = (known after apply)
+      [32m+[0m [0m[1m[0mhosted_zone_id[0m[0m                        = (known after apply)
+      [32m+[0m [0m[1m[0miam_database_authentication_enabled[0m[0m   = false
+      [32m+[0m [0m[1m[0mid[0m[0m                                    = (known after apply)
+      [32m+[0m [0m[1m[0midentifier[0m[0m                            = "viya-default-pgsql"
+      [32m+[0m [0m[1m[0midentifier_prefix[0m[0m                     = (known after apply)
+      [32m+[0m [0m[1m[0minstance_class[0m[0m                        = "db.m5.xlarge"
+      [32m+[0m [0m[1m[0miops[0m[0m                                  = 0
+      [32m+[0m [0m[1m[0mkms_key_id[0m[0m                            = (known after apply)
+      [32m+[0m [0m[1m[0mlatest_restorable_time[0m[0m                = (known after apply)
+      [32m+[0m [0m[1m[0mlicense_model[0m[0m                         = (known after apply)
+      [32m+[0m [0m[1m[0mmaintenance_window[0m[0m                    = "mon:00:00-mon:03:00"
+      [32m+[0m [0m[1m[0mmax_allocated_storage[0m[0m                 = 0
+      [32m+[0m [0m[1m[0mmonitoring_interval[0m[0m                   = 0
+      [32m+[0m [0m[1m[0mmonitoring_role_arn[0m[0m                   = (known after apply)
+      [32m+[0m [0m[1m[0mmulti_az[0m[0m                              = false
+      [32m+[0m [0m[1m[0mname[0m[0m                                  = (known after apply)
+      [32m+[0m [0m[1m[0moption_group_name[0m[0m                     = (known after apply)
+      [32m+[0m [0m[1m[0mparameter_group_name[0m[0m                  = (known after apply)
+      [32m+[0m [0m[1m[0mpassword[0m[0m                              = (sensitive value)
+      [32m+[0m [0m[1m[0mperformance_insights_enabled[0m[0m          = false
+      [32m+[0m [0m[1m[0mperformance_insights_kms_key_id[0m[0m       = (known after apply)
+      [32m+[0m [0m[1m[0mperformance_insights_retention_period[0m[0m = (known after apply)
+      [32m+[0m [0m[1m[0mport[0m[0m                                  = 5432
+      [32m+[0m [0m[1m[0mpublicly_accessible[0m[0m                   = false
+      [32m+[0m [0m[1m[0mreplicas[0m[0m                              = (known after apply)
+      [32m+[0m [0m[1m[0mresource_id[0m[0m                           = (known after apply)
+      [32m+[0m [0m[1m[0mskip_final_snapshot[0m[0m                   = false
+      [32m+[0m [0m[1m[0msnapshot_identifier[0m[0m                   = (known after apply)
+      [32m+[0m [0m[1m[0mstatus[0m[0m                                = (known after apply)
+      [32m+[0m [0m[1m[0mstorage_encrypted[0m[0m                     = false
+      [32m+[0m [0m[1m[0mstorage_type[0m[0m                          = (known after apply)
+      [32m+[0m [0m[1m[0mtags[0m[0m                                  = {
+          [32m+[0m [0m"Name"        = "viya-default-pgsql"
+          [32m+[0m [0m"customer"    = "bnl"
+          [32m+[0m [0m"environment" = "development"
+          [32m+[0m [0m"owner"       = "sysadmin"
+          [32m+[0m [0m"project"     = "viya"
+        }
+      [32m+[0m [0m[1m[0mtags_all[0m[0m                              = {
+          [32m+[0m [0m"Name"        = "viya-default-pgsql"
+          [32m+[0m [0m"customer"    = "bnl"
+          [32m+[0m [0m"environment" = "development"
+          [32m+[0m [0m"owner"       = "sysadmin"
+          [32m+[0m [0m"project"     = "viya"
+        }
+      [32m+[0m [0m[1m[0mtimezone[0m[0m                              = (known after apply)
+      [32m+[0m [0m[1m[0musername[0m[0m                              = "pgadmin"
+      [32m+[0m [0m[1m[0mvpc_security_group_ids[0m[0m                = (known after apply)
+
+      [32m+[0m [0mtimeouts {
+          [32m+[0m [0m[1m[0mcreate[0m[0m = "40m"
+          [32m+[0m [0m[1m[0mdelete[0m[0m = "40m"
+          [32m+[0m [0m[1m[0mupdate[0m[0m = "80m"
+        }
+    }
+
+[1m  # module.postgresql["default"].module.db_instance.random_id.snapshot_identifier[0][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "random_id" "snapshot_identifier" {
+      [32m+[0m [0m[1m[0mb64_std[0m[0m     = (known after apply)
+      [32m+[0m [0m[1m[0mb64_url[0m[0m     = (known after apply)
+      [32m+[0m [0m[1m[0mbyte_length[0m[0m = 4
+      [32m+[0m [0m[1m[0mdec[0m[0m         = (known after apply)
+      [32m+[0m [0m[1m[0mhex[0m[0m         = (known after apply)
+      [32m+[0m [0m[1m[0mid[0m[0m          = (known after apply)
+      [32m+[0m [0m[1m[0mkeepers[0m[0m     = {
+          [32m+[0m [0m"id" = "viya-default-pgsql"
+        }
+    }
+
+[1m  # module.postgresql["default"].module.db_parameter_group.aws_db_parameter_group.this[0][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_db_parameter_group" "this" {
+      [32m+[0m [0m[1m[0marn[0m[0m         = (known after apply)
+      [32m+[0m [0m[1m[0mdescription[0m[0m = "viya-default-pgsql parameter group"
+      [32m+[0m [0m[1m[0mfamily[0m[0m      = "postgres11"
+      [32m+[0m [0m[1m[0mid[0m[0m          = (known after apply)
+      [32m+[0m [0m[1m[0mname[0m[0m        = (known after apply)
+      [32m+[0m [0m[1m[0mname_prefix[0m[0m = "viya-default-pgsql-"
+      [32m+[0m [0m[1m[0mtags[0m[0m        = {
+          [32m+[0m [0m"Name"        = "viya-default-pgsql"
+          [32m+[0m [0m"customer"    = "bnl"
+          [32m+[0m [0m"environment" = "development"
+          [32m+[0m [0m"owner"       = "sysadmin"
+          [32m+[0m [0m"project"     = "viya"
+        }
+      [32m+[0m [0m[1m[0mtags_all[0m[0m    = {
+          [32m+[0m [0m"Name"        = "viya-default-pgsql"
+          [32m+[0m [0m"customer"    = "bnl"
+          [32m+[0m [0m"environment" = "development"
+          [32m+[0m [0m"owner"       = "sysadmin"
+          [32m+[0m [0m"project"     = "viya"
+        }
+
+      [32m+[0m [0mparameter {
+          [32m+[0m [0m[1m[0mapply_method[0m[0m = "immediate"
+          [32m+[0m [0m[1m[0mname[0m[0m         = "rds.force_ssl"
+          [32m+[0m [0m[1m[0mvalue[0m[0m        = "1"
+        }
+    }
+
+[1m  # module.postgresql["default"].module.db_subnet_group.aws_db_subnet_group.this[0][0m will be created[0m[0m
+[0m  [32m+[0m[0m resource "aws_db_subnet_group" "this" {
+      [32m+[0m [0m[1m[0marn[0m[0m         = (known after apply)
+      [32m+[0m [0m[1m[0mdescription[0m[0m = "viya-default-pgsql subnet group"
+      [32m+[0m [0m[1m[0mid[0m[0m          = (known after apply)
+      [32m+[0m [0m[1m[0mname[0m[0m        = (known after apply)
+      [32m+[0m [0m[1m[0mname_prefix[0m[0m = "viya-default-pgsql-"
+      [32m+[0m [0m[1m[0msubnet_ids[0m[0m  = (known after apply)
+      [32m+[0m [0m[1m[0mtags[0m[0m        = {
+          [32m+[0m [0m"Name"        = "viya-default-pgsql"
+          [32m+[0m [0m"customer"    = "bnl"
+          [32m+[0m [0m"environment" = "development"
+          [32m+[0m [0m"owner"       = "sysadmin"
+          [32m+[0m [0m"project"     = "viya"
+        }
+      [32m+[0m [0m[1m[0mtags_all[0m[0m    = {
+          [32m+[0m [0m"Name"        = "viya-default-pgsql"
+          [32m+[0m [0m"customer"    = "bnl"
+          [32m+[0m [0m"environment" = "development"
+          [32m+[0m [0m"owner"       = "sysadmin"
+          [32m+[0m [0m"project"     = "viya"
+        }
+    }
+
+[0m[1mPlan:[0m 87 to add, 0 to change, 0 to destroy.
+[0m[0m
+[1mChanges to Outputs:[0m[0m
+  [32m+[0m [0m[1m[0mautoscaler_account[0m[0m      = (known after apply)
+  [32m+[0m [0m[1m[0mcluster_endpoint[0m[0m        = (known after apply)
+  [32m+[0m [0m[1m[0mcluster_name[0m[0m            = "viya-eks"
+  [32m+[0m [0m[1m[0mcluster_node_pool_mode[0m[0m  = "minimal"
+  [32m+[0m [0m[1m[0mcr_endpoint[0m[0m             = "https://218143913712.dkr.ecr.us-east-2.amazonaws.com"
+  [32m+[0m [0m[1m[0minfra_mode[0m[0m              = "standard"
+  [32m+[0m [0m[1m[0mjump_admin_username[0m[0m     = "jumpuser"
+  [32m+[0m [0m[1m[0mjump_private_dns[0m[0m        = (known after apply)
+  [32m+[0m [0m[1m[0mjump_private_ip[0m[0m         = (known after apply)
+  [32m+[0m [0m[1m[0mjump_public_dns[0m[0m         = (known after apply)
+  [32m+[0m [0m[1m[0mjump_public_ip[0m[0m          = (known after apply)
+  [32m+[0m [0m[1m[0mjump_rwx_filestore_path[0m[0m = "/viya-share"
+  [32m+[0m [0m[1m[0mkube_config[0m[0m             = (sensitive value)
+  [32m+[0m [0m[1m[0mlocation[0m[0m                = "us-east-2"
+  [32m+[0m [0m[1m[0mnat_ip[0m[0m                  = (known after apply)
+  [32m+[0m [0m[1m[0mnfs_admin_username[0m[0m      = "nfsuser"
+  [32m+[0m [0m[1m[0mnfs_private_ip[0m[0m          = (known after apply)
+  [32m+[0m [0m[1m[0mnsf_private_dns[0m[0m         = (known after apply)
+  [32m+[0m [0m[1m[0mpostgres_servers[0m[0m        = (sensitive value)
+  [32m+[0m [0m[1m[0mprefix[0m[0m                  = "viya"
+  [32m+[0m [0m[1m[0mprovider[0m[0m                = "aws"
+  [32m+[0m [0m[1m[0mrwx_filestore_endpoint[0m[0m  = (known after apply)
+  [32m+[0m [0m[1m[0mrwx_filestore_path[0m[0m      = "/export"
+  [32m+[0m [0m[1m[0mworker_iam_role_arn[0m[0m     = (known after apply)
+[90m
+─────────────────────────────────────────────────────────────────────────────[0m
+
+Note: You didn't use the -out option to save this plan, so Terraform can't
+guarantee to take exactly these actions if you run "terraform apply" now.
