@@ -218,3 +218,9 @@ worker_iam_role_arn = "arn:aws:iam::218143913712:role/terraform-2021110121151263
 manually review environment to get a feel of what was done.
 
 looks good, but was unable to login to the viya-jump-vm...think it has to due with incorrect "default_public_access_cidrs             = []" so will look at that when I recreate in the morning (destroying for now so does not rack up cost)
+
+that fixed it, can now login to the jump server from any aws instance behind 3.213.44.121 and my home.
+
+```shell
+ssh ubuntu@ec2-18-224-113-237.us-east-2.compute.amazonaws.com -i ~/.ssh/id_rsa.pub
+```
