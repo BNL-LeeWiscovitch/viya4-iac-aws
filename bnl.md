@@ -58,6 +58,11 @@ jq-1.6
 
 # aws environment
 
+not sure why it's not using aws_key_pair so manually created a new one on admin-pl-cli02 for now:
+
+```shell
+
+
 we'll be using this [repo](https://github.com/sassoftware/viya4-iac-aws) along with terraform to create the default resources.
 
 clone the repo:
@@ -73,7 +78,7 @@ create terraform.tfvars and use the contents of examples\sample-input-minimum.tf
 ```yaml
 prefix                                  = "viya"
 location                                = "us-east-2"
-ssh_public_key                          = "~/.ssh/bnl-cloud-20210302.pem"
+ssh_public_key                          = "~/.ssh/id_rsa.pub"
 default_public_access_cidrs             = ["10.20.0.0/16"]
 tags                                    = { "customer" = "bnl", "project" = "viya", "owner" = "sysadmin", "environment" = "development" }
 
@@ -166,5 +171,50 @@ commands will detect it and remind you to do so if necessary.
 ## review what is going to be made
 
 ```shell
-terraform plan -out=terraform.output
+terraform plan
 ```
+
+if it all looks good, then proceed.
+
+## deploy
+
+```shell
+terraform apply
+```
+
+it'll show lots of activity and end with:
+
+```txt
+Apply complete! Resources: 87 added, 0 changed, 0 destroyed.
+
+Outputs:
+
+autoscaler_account = "arn:aws:iam::218143913712:role/viya-cluster-autoscaler"
+cluster_endpoint = "https://10E791926CB448F8B83D91633DEDB540.gr7.us-east-2.eks.amazonaws.com"
+cluster_name = "viya-eks"
+cluster_node_pool_mode = "minimal"
+cr_endpoint = "https://218143913712.dkr.ecr.us-east-2.amazonaws.com"
+infra_mode = "standard"
+jump_admin_username = "jumpuser"
+jump_private_dns = "ip-192-168-129-44.us-east-2.compute.internal"
+jump_private_ip = "192.168.129.44"
+jump_public_dns = "ec2-18-219-40-247.us-east-2.compute.amazonaws.com"
+jump_public_ip = "18.219.40.247"
+jump_rwx_filestore_path = "/viya-share"
+kube_config = <sensitive>
+location = "us-east-2"
+nat_ip = "3.130.119.72"
+nfs_admin_username = "nfsuser"
+nfs_private_ip = "192.168.49.178"
+nsf_private_dns = "ip-192-168-49-178.us-east-2.compute.internal"
+postgres_servers = <sensitive>
+prefix = "viya"
+provider = "aws"
+rwx_filestore_endpoint = "ip-192-168-49-178.us-east-2.compute.internal"
+rwx_filestore_path = "/export"
+worker_iam_role_arn = "arn:aws:iam::218143913712:role/terraform-2021110121151263730000000a"
+```
+
+manually review environment to get a feel of what was done.
+
+looks good, but was unable to login to the viya-jump-vm...think it has to due with incorrect "default_public_access_cidrs             = []" so will look at that when I recreate in the morning (destroying for now so does not rack up cost)
