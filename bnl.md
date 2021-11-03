@@ -222,5 +222,5 @@ looks good, but was unable to login to the viya-jump-vm...think it has to due wi
 that fixed it, can now login to the jump server from any aws instance behind 3.213.44.121 and my home.
 
 ```shell
-ssh ubuntu@ec2-18-224-113-237.us-east-2.compute.amazonaws.com -i ~/.ssh/id_rsa.pub
+ssh jumpuser@ec2-18-224-113-237.us-east-2.compute.amazonaws.com -i ~/.ssh/id_rsa
 ```
